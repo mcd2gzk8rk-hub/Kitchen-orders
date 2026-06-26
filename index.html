@@ -1,0 +1,989 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>طلبات المطبخ</title>
+    <style>
+      :root {
+        --bg: #f5f2ec;
+        --surface: #fffaf2;
+        --surface-strong: #ffffff;
+        --ink: #1e2528;
+        --muted: #667274;
+        --line: #dfd7cb;
+        --accent: #0f766e;
+        --accent-dark: #115e59;
+        --warn: #b45309;
+        --ready: #15803d;
+        --danger: #b91c1c;
+        --shadow: 0 18px 45px rgba(43, 35, 25, 0.11);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Tahoma, Arial, sans-serif;
+        background:
+          linear-gradient(135deg, rgba(15, 118, 110, 0.09), transparent 34%),
+          linear-gradient(315deg, rgba(180, 83, 9, 0.1), transparent 30%),
+          var(--bg);
+        color: var(--ink);
+      }
+
+      button,
+      input,
+      textarea,
+      select {
+        font: inherit;
+      }
+
+      button {
+        min-height: 42px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--accent);
+        color: white;
+        cursor: pointer;
+        transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      button:hover {
+        background: var(--accent-dark);
+        box-shadow: 0 8px 18px rgba(15, 118, 110, 0.18);
+        transform: translateY(-1px);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .ghost {
+        background: #edf6f4;
+        color: var(--accent-dark);
+      }
+
+      .ghost:hover {
+        background: #d8eeea;
+      }
+
+      .danger {
+        background: #fee2e2;
+        color: var(--danger);
+      }
+
+      .danger:hover {
+        background: #fecaca;
+      }
+
+      .app {
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px clamp(16px, 4vw, 42px);
+        border-bottom: 1px solid rgba(31, 41, 55, 0.08);
+        background: rgba(255, 250, 242, 0.88);
+        backdrop-filter: blur(14px);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .mark {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: #132f2c;
+        color: #ffdf9e;
+        flex: 0 0 auto;
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: clamp(20px, 3vw, 28px);
+      }
+
+      .brand p {
+        margin: 3px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .mode-switch {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(96px, 1fr));
+        gap: 6px;
+        padding: 5px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface-strong);
+      }
+
+      .mode-switch button {
+        min-height: 36px;
+        padding: 0 12px;
+        background: transparent;
+        color: var(--muted);
+        box-shadow: none;
+      }
+
+      .mode-switch button.active {
+        background: var(--accent);
+        color: white;
+      }
+
+      main {
+        width: min(1440px, 100%);
+        margin: 0 auto;
+        padding: clamp(16px, 4vw, 42px);
+      }
+
+      .phone-layout {
+        display: grid;
+        grid-template-columns: minmax(280px, 0.92fr) minmax(340px, 1.5fr);
+        gap: 22px;
+        align-items: start;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 250, 242, 0.92);
+        box-shadow: var(--shadow);
+      }
+
+      .panel-head {
+        padding: 18px 18px 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .panel-head h2,
+      .section-title {
+        margin: 0;
+        font-size: 20px;
+      }
+
+      .panel-head p {
+        margin: 7px 0 0;
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 14px;
+      }
+
+      .panel-body {
+        padding: 18px;
+      }
+
+      .visual-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .food-tile {
+        min-height: 86px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        background-size: cover;
+        background-position: center;
+        box-shadow: inset 0 -42px 36px rgba(0, 0, 0, 0.25);
+        display: flex;
+        align-items: end;
+        padding: 10px;
+        color: white;
+        font-weight: 700;
+        font-size: 13px;
+      }
+
+      .tile-rice {
+        background-image: linear-gradient(rgba(0,0,0,0.02), rgba(0,0,0,0.22)), url("https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=500&q=70");
+      }
+
+      .tile-grill {
+        background-image: linear-gradient(rgba(0,0,0,0.02), rgba(0,0,0,0.22)), url("https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=500&q=70");
+      }
+
+      .tile-soup {
+        background-image: linear-gradient(rgba(0,0,0,0.02), rgba(0,0,0,0.22)), url("https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=500&q=70");
+      }
+
+      label {
+        display: grid;
+        gap: 7px;
+        margin-bottom: 14px;
+        color: #334155;
+        font-weight: 700;
+        font-size: 13px;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        min-height: 42px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 12px;
+        background: white;
+        color: var(--ink);
+        outline: none;
+      }
+
+      textarea {
+        min-height: 82px;
+        resize: vertical;
+        line-height: 1.7;
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .full {
+        grid-column: 1 / -1;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .actions button {
+        padding: 0 16px;
+      }
+
+      .catalog-tools {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .catalog-tools input {
+        max-width: 300px;
+      }
+
+      .meal-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 14px;
+      }
+
+      .meal-card,
+      .order-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface-strong);
+        overflow: hidden;
+      }
+
+      .meal-card {
+        display: grid;
+        grid-template-rows: 132px 1fr;
+      }
+
+      .meal-photo {
+        background:
+          linear-gradient(135deg, rgba(15, 118, 110, 0.28), rgba(180, 83, 9, 0.22)),
+          var(--photo, #d9eadf);
+        background-size: cover;
+        background-position: center;
+      }
+
+      .meal-info {
+        padding: 14px;
+      }
+
+      .meal-info h3 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+
+      .ingredients {
+        margin: 0 0 14px;
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 13px;
+      }
+
+      .order-row {
+        display: grid;
+        grid-template-columns: 1fr 88px;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .status-bar {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+
+      .stat {
+        min-height: 82px;
+        border-radius: 8px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 28px;
+      }
+
+      .stat span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .kitchen-layout {
+        display: none;
+      }
+
+      .kitchen-layout.active,
+      .phone-layout.active {
+        display: grid;
+      }
+
+      .phone-layout:not(.active) {
+        display: none;
+      }
+
+      .kitchen-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .board-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 20px;
+      }
+
+      .board-head h2 {
+        margin: 0;
+        font-size: clamp(30px, 5vw, 54px);
+      }
+
+      .clock {
+        color: var(--muted);
+        font-size: clamp(18px, 2.4vw, 28px);
+        white-space: nowrap;
+      }
+
+      .orders-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+      }
+
+      .order-card {
+        padding: 16px;
+        position: relative;
+      }
+
+      .order-card.ready {
+        border-color: rgba(21, 128, 61, 0.5);
+        background: #f0fdf4;
+      }
+
+      .order-card.cooking {
+        border-color: rgba(180, 83, 9, 0.5);
+        background: #fffbeb;
+      }
+
+      .order-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .order-top h3 {
+        margin: 0;
+        font-size: clamp(20px, 2.5vw, 30px);
+      }
+
+      .badge {
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: #eef2f7;
+        color: #334155;
+        white-space: nowrap;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .order-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .note {
+        min-height: 44px;
+        color: var(--muted);
+        line-height: 1.7;
+        margin: 0 0 14px;
+      }
+
+      .empty {
+        min-height: 260px;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.55);
+        color: var(--muted);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 900px) {
+        header {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .phone-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .status-bar {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 560px) {
+        main {
+          padding: 14px;
+        }
+
+        .form-grid,
+        .order-row,
+        .catalog-tools {
+          grid-template-columns: 1fr;
+          display: grid;
+        }
+
+        .catalog-tools input {
+          max-width: none;
+        }
+
+        .visual-strip {
+          grid-template-columns: 1fr;
+        }
+
+        .mode-switch,
+        .status-bar {
+          grid-template-columns: 1fr;
+        }
+
+        .board-head {
+          align-items: start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <div class="brand">
+          <div class="mark" aria-hidden="true">
+            <svg width="25" height="25" viewBox="0 0 24 24" fill="none">
+              <path d="M4 4v7a4 4 0 0 0 4 4h1v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M8 4v7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M13 4v16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M17 4c2 1.6 3 3.6 3 6s-1 4.4-3 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <h1>طلبات المطبخ</h1>
+            <p id="subtitle">اختيار الوجبات وجدولة الطلبات</p>
+          </div>
+        </div>
+        <nav class="mode-switch" aria-label="تبديل الواجهة">
+          <button id="phoneMode" class="active" type="button">الجوال</button>
+          <button id="kitchenMode" type="button">المطبخ</button>
+        </nav>
+      </header>
+
+      <main>
+        <section id="phoneView" class="phone-layout active">
+          <aside class="panel">
+            <div class="panel-head">
+              <h2>إضافة وجبة</h2>
+              <p>أدخل اسم الوجبة ومكوناتها لتظهر مباشرة ضمن خيارات الطلب.</p>
+            </div>
+            <div class="panel-body">
+              <div class="visual-strip" aria-hidden="true">
+                <div class="food-tile tile-rice">أرز</div>
+                <div class="food-tile tile-grill">مشويات</div>
+                <div class="food-tile tile-soup">شوربة</div>
+              </div>
+              <form id="mealForm">
+                <label>
+                  اسم الوجبة
+                  <input id="mealName" autocomplete="off" required placeholder="مثال: كبسة دجاج" />
+                </label>
+                <label>
+                  المكونات
+                  <textarea id="mealIngredients" required placeholder="دجاج، أرز، بهارات، سلطة"></textarea>
+                </label>
+                <label>
+                  رابط صورة اختياري
+                  <input id="mealImage" inputmode="url" placeholder="https://..." />
+                </label>
+                <div class="actions">
+                  <button type="submit">حفظ الوجبة</button>
+                  <button class="ghost" id="resetMeals" type="button">استرجاع أمثلة</button>
+                </div>
+              </form>
+            </div>
+          </aside>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div class="catalog-tools">
+                <div>
+                  <h2 class="section-title">اختيار الطلب</h2>
+                  <p>حدد الوقت والكمية ثم أرسل الطلب لشاشة المطبخ.</p>
+                </div>
+                <input id="searchMeal" placeholder="بحث عن وجبة" />
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="form-grid">
+                <label>
+                  وقت التحضير
+                  <input id="wantedTime" type="time" required />
+                </label>
+                <label>
+                  الكمية الافتراضية
+                  <input id="defaultQty" type="number" min="1" max="99" value="1" />
+                </label>
+                <label class="full">
+                  ملاحظة للطلب
+                  <input id="orderNote" placeholder="مثال: بدون فلفل، زيادة صوص" />
+                </label>
+              </div>
+              <div id="mealGrid" class="meal-grid"></div>
+            </div>
+          </section>
+        </section>
+
+        <section id="kitchenView" class="kitchen-layout">
+          <div class="board-head">
+            <div>
+              <h2>شاشة المطبخ</h2>
+              <p class="note">الطلبات مرتبة حسب الوقت المطلوب.</p>
+            </div>
+            <div id="clock" class="clock"></div>
+          </div>
+          <div class="status-bar">
+            <div class="stat"><strong id="newCount">0</strong><span>طلبات جديدة</span></div>
+            <div class="stat"><strong id="cookingCount">0</strong><span>قيد التحضير</span></div>
+            <div class="stat"><strong id="readyCount">0</strong><span>جاهزة</span></div>
+            <div class="stat"><strong id="totalCount">0</strong><span>إجمالي مفتوح</span></div>
+          </div>
+          <div id="ordersGrid" class="orders-grid"></div>
+          <div id="emptyOrders" class="empty hidden">لا توجد طلبات مفتوحة حالياً</div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const storeKey = "kitchen-orders-v1";
+      const usingServer = location.protocol === "http:" || location.protocol === "https:";
+      const sync = !usingServer && "BroadcastChannel" in window ? new BroadcastChannel("kitchen-orders") : null;
+
+      const demoMeals = [
+        {
+          id: crypto.randomUUID(),
+          name: "كبسة دجاج",
+          ingredients: "دجاج، أرز بسمتي، طماطم، بصل، بهارات كبسة",
+          image: "https://images.unsplash.com/photo-1599043513900-ed6fe01d3833?auto=format&fit=crop&w=700&q=70"
+        },
+        {
+          id: crypto.randomUUID(),
+          name: "مشويات مشكلة",
+          ingredients: "كباب، شيش طاووق، خضار مشوية، خبز",
+          image: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=700&q=70"
+        },
+        {
+          id: crypto.randomUUID(),
+          name: "سلطة فتوش",
+          ingredients: "خس، خيار، طماطم، نعناع، خبز محمص، دبس رمان",
+          image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=70"
+        }
+      ];
+
+      let state = loadState();
+
+      const refs = {
+        phoneMode: document.getElementById("phoneMode"),
+        kitchenMode: document.getElementById("kitchenMode"),
+        phoneView: document.getElementById("phoneView"),
+        kitchenView: document.getElementById("kitchenView"),
+        subtitle: document.getElementById("subtitle"),
+        mealForm: document.getElementById("mealForm"),
+        mealName: document.getElementById("mealName"),
+        mealIngredients: document.getElementById("mealIngredients"),
+        mealImage: document.getElementById("mealImage"),
+        resetMeals: document.getElementById("resetMeals"),
+        searchMeal: document.getElementById("searchMeal"),
+        wantedTime: document.getElementById("wantedTime"),
+        defaultQty: document.getElementById("defaultQty"),
+        orderNote: document.getElementById("orderNote"),
+        mealGrid: document.getElementById("mealGrid"),
+        ordersGrid: document.getElementById("ordersGrid"),
+        emptyOrders: document.getElementById("emptyOrders"),
+        clock: document.getElementById("clock"),
+        newCount: document.getElementById("newCount"),
+        cookingCount: document.getElementById("cookingCount"),
+        readyCount: document.getElementById("readyCount"),
+        totalCount: document.getElementById("totalCount")
+      };
+
+      function loadState() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(storeKey));
+          if (saved && Array.isArray(saved.meals) && Array.isArray(saved.orders)) {
+            return saved;
+          }
+        } catch (error) {}
+        return { meals: demoMeals, orders: [] };
+      }
+
+      function saveState(emit = true) {
+        localStorage.setItem(storeKey, JSON.stringify(state));
+        if (emit && sync) sync.postMessage(state);
+      }
+
+      async function api(path, options = {}) {
+        const response = await fetch(path, {
+          headers: { "content-type": "application/json" },
+          ...options
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "تعذر تنفيذ العملية");
+        state = payload;
+        render();
+        return payload;
+      }
+
+      async function loadServerState() {
+        if (!usingServer) return;
+        try {
+          const response = await fetch("/api/state", { cache: "no-store" });
+          state = await response.json();
+          render();
+        } catch (error) {
+          console.warn(error);
+        }
+      }
+
+      function setMode(mode) {
+        const kitchen = mode === "kitchen";
+        refs.phoneMode.classList.toggle("active", !kitchen);
+        refs.kitchenMode.classList.toggle("active", kitchen);
+        refs.phoneView.classList.toggle("active", !kitchen);
+        refs.kitchenView.classList.toggle("active", kitchen);
+        refs.subtitle.textContent = kitchen ? "متابعة الطلبات داخل المطبخ" : "اختيار الوجبات وجدولة الطلبات";
+        history.replaceState(null, "", kitchen ? "#kitchen" : "#phone");
+      }
+
+      function renderMeals() {
+        const query = refs.searchMeal.value.trim().toLowerCase();
+        const meals = state.meals.filter((meal) => {
+          const haystack = `${meal.name} ${meal.ingredients}`.toLowerCase();
+          return haystack.includes(query);
+        });
+
+        refs.mealGrid.innerHTML = meals.map((meal) => `
+          <article class="meal-card">
+            <div class="meal-photo" style="--photo: url('${escapeAttr(meal.image || "")}')"></div>
+            <div class="meal-info">
+              <h3>${escapeHtml(meal.name)}</h3>
+              <p class="ingredients">${escapeHtml(meal.ingredients)}</p>
+              <div class="order-row">
+                <button type="button" data-order="${meal.id}">إرسال للمطبخ</button>
+                <input type="number" min="1" max="99" value="${Number(refs.defaultQty.value) || 1}" aria-label="كمية ${escapeAttr(meal.name)}" data-qty="${meal.id}" />
+              </div>
+              <button class="danger" type="button" data-delete-meal="${meal.id}">حذف الوجبة</button>
+            </div>
+          </article>
+        `).join("");
+      }
+
+      function renderOrders() {
+        const openOrders = state.orders
+          .filter((order) => order.status !== "done")
+          .sort((a, b) => a.time.localeCompare(b.time) || a.createdAt - b.createdAt);
+
+        refs.ordersGrid.innerHTML = openOrders.map((order) => {
+          const statusText = statusLabel(order.status);
+          return `
+            <article class="order-card ${order.status}">
+              <div class="order-top">
+                <h3>${escapeHtml(order.mealName)}</h3>
+                <span class="badge">${statusText}</span>
+              </div>
+              <div class="order-meta">
+                <span class="badge">الوقت ${escapeHtml(order.time)}</span>
+                <span class="badge">الكمية ${order.qty}</span>
+              </div>
+              <p class="ingredients">${escapeHtml(order.ingredients)}</p>
+              <p class="note">${escapeHtml(order.note || "بدون ملاحظات")}</p>
+              <div class="actions">
+                <button class="ghost" type="button" data-status="${order.id}" data-next="cooking">جاري التحضير</button>
+                <button type="button" data-status="${order.id}" data-next="ready">جاهزة</button>
+                <button class="danger" type="button" data-status="${order.id}" data-next="done">تم التسليم</button>
+              </div>
+            </article>
+          `;
+        }).join("");
+
+        refs.emptyOrders.classList.toggle("hidden", openOrders.length > 0);
+        refs.newCount.textContent = openOrders.filter((order) => order.status === "new").length;
+        refs.cookingCount.textContent = openOrders.filter((order) => order.status === "cooking").length;
+        refs.readyCount.textContent = openOrders.filter((order) => order.status === "ready").length;
+        refs.totalCount.textContent = openOrders.length;
+      }
+
+      function render() {
+        renderMeals();
+        renderOrders();
+      }
+
+      function statusLabel(status) {
+        return {
+          new: "جديد",
+          cooking: "قيد التحضير",
+          ready: "جاهز",
+          done: "تم التسليم"
+        }[status] || "جديد";
+      }
+
+      async function orderMeal(mealId) {
+        const meal = state.meals.find((item) => item.id === mealId);
+        if (!meal) return;
+
+        const qtyInput = document.querySelector(`[data-qty="${CSS.escape(mealId)}"]`);
+        const qty = Math.max(1, Math.min(99, Number(qtyInput?.value) || Number(refs.defaultQty.value) || 1));
+        const time = refs.wantedTime.value || currentTime();
+
+        const order = {
+          mealId,
+          qty,
+          time,
+          note: refs.orderNote.value.trim()
+        };
+
+        if (usingServer) {
+          await api("/api/orders", {
+            method: "POST",
+            body: JSON.stringify(order)
+          });
+        } else {
+          state.orders.push({
+            id: crypto.randomUUID(),
+            mealId,
+            mealName: meal.name,
+            ingredients: meal.ingredients,
+            qty,
+            time,
+            note: refs.orderNote.value.trim(),
+            status: "new",
+            createdAt: Date.now()
+          });
+          saveState();
+          renderOrders();
+        }
+
+        refs.orderNote.value = "";
+        setMode("kitchen");
+      }
+
+      function currentTime() {
+        return new Intl.DateTimeFormat("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false
+        }).format(new Date());
+      }
+
+      function setDefaultTime() {
+        if (!refs.wantedTime.value) refs.wantedTime.value = currentTime();
+      }
+
+      function updateClock() {
+        refs.clock.textContent = new Intl.DateTimeFormat("ar-SA", {
+          weekday: "long",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        }).format(new Date());
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function escapeAttr(value) {
+        return escapeHtml(value).replaceAll("`", "&#096;");
+      }
+
+      refs.phoneMode.addEventListener("click", () => setMode("phone"));
+      refs.kitchenMode.addEventListener("click", () => setMode("kitchen"));
+      refs.searchMeal.addEventListener("input", renderMeals);
+      refs.defaultQty.addEventListener("input", renderMeals);
+
+      refs.mealForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const meal = {
+          name: refs.mealName.value.trim(),
+          ingredients: refs.mealIngredients.value.trim(),
+          image: refs.mealImage.value.trim()
+        };
+
+        if (usingServer) {
+          await api("/api/meals", {
+            method: "POST",
+            body: JSON.stringify(meal)
+          });
+        } else {
+          state.meals.unshift({ id: crypto.randomUUID(), ...meal });
+          saveState();
+          renderMeals();
+        }
+
+        refs.mealForm.reset();
+      });
+
+      refs.resetMeals.addEventListener("click", async () => {
+        if (usingServer) {
+          await api("/api/reset-meals", { method: "POST" });
+        } else {
+          state.meals = demoMeals.map((meal) => ({ ...meal, id: crypto.randomUUID() }));
+          saveState();
+          renderMeals();
+        }
+      });
+
+      refs.mealGrid.addEventListener("click", async (event) => {
+        const orderButton = event.target.closest("[data-order]");
+        const deleteButton = event.target.closest("[data-delete-meal]");
+        if (orderButton) orderMeal(orderButton.dataset.order);
+        if (deleteButton) {
+          if (usingServer) {
+            await api(`/api/meals/${encodeURIComponent(deleteButton.dataset.deleteMeal)}`, { method: "DELETE" });
+          } else {
+            state.meals = state.meals.filter((meal) => meal.id !== deleteButton.dataset.deleteMeal);
+            saveState();
+            renderMeals();
+          }
+        }
+      });
+
+      refs.ordersGrid.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-status]");
+        if (!button) return;
+        if (usingServer) {
+          await api(`/api/orders/${encodeURIComponent(button.dataset.status)}/status`, {
+            method: "PATCH",
+            body: JSON.stringify({ status: button.dataset.next })
+          });
+        } else {
+          state.orders = state.orders.map((order) => {
+            if (order.id !== button.dataset.status) return order;
+            return { ...order, status: button.dataset.next };
+          });
+          saveState();
+          renderOrders();
+        }
+      });
+
+      window.addEventListener("storage", (event) => {
+        if (event.key !== storeKey || !event.newValue) return;
+        state = JSON.parse(event.newValue);
+        render();
+      });
+
+      if (sync) {
+        sync.addEventListener("message", (event) => {
+          state = event.data;
+          saveState(false);
+          render();
+        });
+      }
+
+      if (usingServer) {
+        setInterval(loadServerState, 1500);
+      }
+
+      window.addEventListener("hashchange", () => {
+        setMode(location.hash === "#kitchen" ? "kitchen" : "phone");
+      });
+
+      setDefaultTime();
+      setMode(location.hash === "#kitchen" ? "kitchen" : "phone");
+      render();
+      loadServerState();
+      updateClock();
+      setInterval(updateClock, 1000);
+    </script>
+  </body>
+</html>
