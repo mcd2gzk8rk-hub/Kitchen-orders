@@ -155,6 +155,12 @@
         color: white;
       }
 
+      .language-select {
+        width: auto;
+        min-width: 132px;
+        min-height: 42px;
+      }
+
       main {
         width: min(1440px, 100%);
         margin: 0 auto;
@@ -553,6 +559,11 @@
           <button id="phoneMode" class="active" type="button">الجوال</button>
           <button id="kitchenMode" type="button">المطبخ</button>
         </nav>
+        <select id="languageSelect" class="language-select" aria-label="Language">
+          <option value="ar">عربي</option>
+          <option value="en">English</option>
+          <option value="fil">Filipino</option>
+        </select>
       </header>
 
       <main>
@@ -641,8 +652,154 @@
 
     <script>
       const storeKey = "kitchen-orders-v1";
+      const languageKey = "kitchen-language-v1";
       const usingServer = location.protocol === "http:" || location.protocol === "https:";
       const sync = !usingServer && "BroadcastChannel" in window ? new BroadcastChannel("kitchen-orders") : null;
+      let currentLanguage = localStorage.getItem(languageKey) || "ar";
+
+      const translations = {
+        ar: {
+          title: "طلبات المطبخ",
+          subtitlePhone: "اختيار الوجبات وجدولة الطلبات",
+          subtitleKitchen: "متابعة الطلبات داخل المطبخ",
+          phoneMode: "الجوال",
+          kitchenMode: "المطبخ",
+          addMeal: "إضافة وجبة",
+          addMealHelp: "أدخل اسم الوجبة ومكوناتها لتظهر مباشرة ضمن خيارات الطلب.",
+          rice: "أرز",
+          grill: "مشويات",
+          soup: "شوربة",
+          mealName: "اسم الوجبة",
+          mealNamePlaceholder: "مثال: كبسة دجاج",
+          ingredients: "المكونات",
+          ingredientsPlaceholder: "دجاج، أرز، بهارات، سلطة",
+          imageUrl: "رابط صورة اختياري",
+          saveMeal: "حفظ الوجبة",
+          resetMeals: "استرجاع أمثلة",
+          chooseOrder: "اختيار الطلب",
+          chooseOrderHelp: "حدد الوقت والكمية ثم أرسل الطلب لشاشة المطبخ.",
+          searchMeal: "بحث عن وجبة",
+          wantedTime: "وقت التحضير",
+          defaultQty: "الكمية الافتراضية",
+          orderNote: "ملاحظة للطلب",
+          orderNotePlaceholder: "مثال: بدون فلفل، زيادة صوص",
+          kitchenScreen: "شاشة المطبخ",
+          sortedOrders: "الطلبات مرتبة حسب الوقت المطلوب.",
+          newOrders: "طلبات جديدة",
+          cookingOrders: "قيد التحضير",
+          readyOrders: "جاهزة",
+          totalOpen: "إجمالي مفتوح",
+          emptyOrders: "لا توجد طلبات مفتوحة حالياً",
+          sendKitchen: "إرسال للمطبخ",
+          qtyAria: "كمية",
+          deleteMeal: "حذف الوجبة",
+          time: "الوقت",
+          qty: "الكمية",
+          noNotes: "بدون ملاحظات",
+          markCooking: "جاري التحضير",
+          markReady: "جاهزة",
+          markDone: "تم التسليم",
+          statusNew: "جديد",
+          statusCooking: "قيد التحضير",
+          statusReady: "جاهز",
+          statusDone: "تم التسليم",
+          apiError: "تعذر تنفيذ العملية"
+        },
+        en: {
+          title: "Kitchen Orders",
+          subtitlePhone: "Choose meals and schedule orders",
+          subtitleKitchen: "Track orders inside the kitchen",
+          phoneMode: "Phone",
+          kitchenMode: "Kitchen",
+          addMeal: "Add Meal",
+          addMealHelp: "Enter the meal name and ingredients so it appears in the order options.",
+          rice: "Rice",
+          grill: "Grill",
+          soup: "Soup",
+          mealName: "Meal name",
+          mealNamePlaceholder: "Example: Chicken kabsa",
+          ingredients: "Ingredients",
+          ingredientsPlaceholder: "Chicken, rice, spices, salad",
+          imageUrl: "Optional image URL",
+          saveMeal: "Save meal",
+          resetMeals: "Restore examples",
+          chooseOrder: "Choose Order",
+          chooseOrderHelp: "Select the time and quantity, then send the order to the kitchen screen.",
+          searchMeal: "Search meals",
+          wantedTime: "Preparation time",
+          defaultQty: "Default quantity",
+          orderNote: "Order note",
+          orderNotePlaceholder: "Example: no pepper, extra sauce",
+          kitchenScreen: "Kitchen Screen",
+          sortedOrders: "Orders are sorted by requested time.",
+          newOrders: "New orders",
+          cookingOrders: "Cooking",
+          readyOrders: "Ready",
+          totalOpen: "Open total",
+          emptyOrders: "No open orders right now",
+          sendKitchen: "Send to kitchen",
+          qtyAria: "Quantity",
+          deleteMeal: "Delete meal",
+          time: "Time",
+          qty: "Qty",
+          noNotes: "No notes",
+          markCooking: "Start cooking",
+          markReady: "Ready",
+          markDone: "Delivered",
+          statusNew: "New",
+          statusCooking: "Cooking",
+          statusReady: "Ready",
+          statusDone: "Delivered",
+          apiError: "Could not complete the action"
+        },
+        fil: {
+          title: "Mga Order sa Kusina",
+          subtitlePhone: "Pumili ng pagkain at iskedyul ng order",
+          subtitleKitchen: "Subaybayan ang mga order sa kusina",
+          phoneMode: "Telepono",
+          kitchenMode: "Kusina",
+          addMeal: "Magdagdag ng Pagkain",
+          addMealHelp: "Ilagay ang pangalan ng pagkain at mga sangkap para lumabas sa pagpipilian.",
+          rice: "Kanin",
+          grill: "Inihaw",
+          soup: "Sopas",
+          mealName: "Pangalan ng pagkain",
+          mealNamePlaceholder: "Halimbawa: Chicken kabsa",
+          ingredients: "Mga sangkap",
+          ingredientsPlaceholder: "Manok, kanin, pampalasa, salad",
+          imageUrl: "Opsyonal na image URL",
+          saveMeal: "I-save ang pagkain",
+          resetMeals: "Ibalik ang halimbawa",
+          chooseOrder: "Pumili ng Order",
+          chooseOrderHelp: "Piliin ang oras at dami, tapos ipadala sa screen ng kusina.",
+          searchMeal: "Maghanap ng pagkain",
+          wantedTime: "Oras ng paghahanda",
+          defaultQty: "Default na dami",
+          orderNote: "Tala sa order",
+          orderNotePlaceholder: "Halimbawa: walang sili, dagdag sauce",
+          kitchenScreen: "Screen ng Kusina",
+          sortedOrders: "Nakaayos ang mga order ayon sa hiniling na oras.",
+          newOrders: "Bagong order",
+          cookingOrders: "Niluluto",
+          readyOrders: "Handa na",
+          totalOpen: "Kabuuang bukas",
+          emptyOrders: "Walang bukas na order ngayon",
+          sendKitchen: "Ipadala sa kusina",
+          qtyAria: "Dami",
+          deleteMeal: "Burahin ang pagkain",
+          time: "Oras",
+          qty: "Dami",
+          noNotes: "Walang tala",
+          markCooking: "Simulan lutuin",
+          markReady: "Handa na",
+          markDone: "Na-deliver",
+          statusNew: "Bago",
+          statusCooking: "Niluluto",
+          statusReady: "Handa na",
+          statusDone: "Na-deliver",
+          apiError: "Hindi nakumpleto ang aksyon"
+        }
+      };
 
       const demoMeals = [
         {
@@ -670,6 +827,7 @@
       const refs = {
         phoneMode: document.getElementById("phoneMode"),
         kitchenMode: document.getElementById("kitchenMode"),
+        languageSelect: document.getElementById("languageSelect"),
         phoneView: document.getElementById("phoneView"),
         kitchenView: document.getElementById("kitchenView"),
         subtitle: document.getElementById("subtitle"),
@@ -713,7 +871,7 @@
           ...options
         });
         const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error || "تعذر تنفيذ العملية");
+        if (!response.ok) throw new Error(payload.error || t("apiError"));
         state = payload;
         render();
         return payload;
@@ -730,13 +888,71 @@
         }
       }
 
+      function t(key) {
+        return translations[currentLanguage]?.[key] || translations.ar[key] || key;
+      }
+
+      function setText(selector, text) {
+        const element = document.querySelector(selector);
+        if (element) element.textContent = text;
+      }
+
+      function setLabel(inputId, text) {
+        const label = document.getElementById(inputId)?.closest("label");
+        if (!label) return;
+        const textNode = Array.from(label.childNodes).find((node) => node.nodeType === Node.TEXT_NODE);
+        if (textNode) textNode.nodeValue = `\n                  ${text}\n                  `;
+      }
+
+      function applyLanguage() {
+        const isArabic = currentLanguage === "ar";
+        document.documentElement.lang = isArabic ? "ar" : currentLanguage;
+        document.documentElement.dir = isArabic ? "rtl" : "ltr";
+        document.title = t("title");
+        refs.languageSelect.value = currentLanguage;
+
+        setText(".brand h1", t("title"));
+        refs.phoneMode.textContent = t("phoneMode");
+        refs.kitchenMode.textContent = t("kitchenMode");
+        setText("#phoneView aside .panel-head h2", t("addMeal"));
+        setText("#phoneView aside .panel-head p", t("addMealHelp"));
+        setText(".tile-rice", t("rice"));
+        setText(".tile-grill", t("grill"));
+        setText(".tile-soup", t("soup"));
+        setLabel("mealName", t("mealName"));
+        setLabel("mealIngredients", t("ingredients"));
+        setLabel("mealImage", t("imageUrl"));
+        refs.mealName.placeholder = t("mealNamePlaceholder");
+        refs.mealIngredients.placeholder = t("ingredientsPlaceholder");
+        refs.mealImage.placeholder = "https://...";
+        document.querySelector("#mealForm button[type='submit']").textContent = t("saveMeal");
+        refs.resetMeals.textContent = t("resetMeals");
+        setText(".catalog-tools .section-title", t("chooseOrder"));
+        setText(".catalog-tools p", t("chooseOrderHelp"));
+        refs.searchMeal.placeholder = t("searchMeal");
+        setLabel("wantedTime", t("wantedTime"));
+        setLabel("defaultQty", t("defaultQty"));
+        setLabel("orderNote", t("orderNote"));
+        refs.orderNote.placeholder = t("orderNotePlaceholder");
+        setText("#kitchenView .board-head h2", t("kitchenScreen"));
+        setText("#kitchenView .board-head .note", t("sortedOrders"));
+        setText("#newCount + span", t("newOrders"));
+        setText("#cookingCount + span", t("cookingOrders"));
+        setText("#readyCount + span", t("readyOrders"));
+        setText("#totalCount + span", t("totalOpen"));
+        refs.emptyOrders.textContent = t("emptyOrders");
+        setMode(location.hash === "#kitchen" ? "kitchen" : "phone");
+        render();
+        updateClock();
+      }
+
       function setMode(mode) {
         const kitchen = mode === "kitchen";
         refs.phoneMode.classList.toggle("active", !kitchen);
         refs.kitchenMode.classList.toggle("active", kitchen);
         refs.phoneView.classList.toggle("active", !kitchen);
         refs.kitchenView.classList.toggle("active", kitchen);
-        refs.subtitle.textContent = kitchen ? "متابعة الطلبات داخل المطبخ" : "اختيار الوجبات وجدولة الطلبات";
+        refs.subtitle.textContent = kitchen ? t("subtitleKitchen") : t("subtitlePhone");
         history.replaceState(null, "", kitchen ? "#kitchen" : "#phone");
       }
 
@@ -754,10 +970,10 @@
               <h3>${escapeHtml(meal.name)}</h3>
               <p class="ingredients">${escapeHtml(meal.ingredients)}</p>
               <div class="order-row">
-                <button type="button" data-order="${meal.id}">إرسال للمطبخ</button>
-                <input type="number" min="1" max="99" value="${Number(refs.defaultQty.value) || 1}" aria-label="كمية ${escapeAttr(meal.name)}" data-qty="${meal.id}" />
+                <button type="button" data-order="${meal.id}">${t("sendKitchen")}</button>
+                <input type="number" min="1" max="99" value="${Number(refs.defaultQty.value) || 1}" aria-label="${t("qtyAria")} ${escapeAttr(meal.name)}" data-qty="${meal.id}" />
               </div>
-              <button class="danger" type="button" data-delete-meal="${meal.id}">حذف الوجبة</button>
+              <button class="danger" type="button" data-delete-meal="${meal.id}">${t("deleteMeal")}</button>
             </div>
           </article>
         `).join("");
@@ -777,15 +993,15 @@
                 <span class="badge">${statusText}</span>
               </div>
               <div class="order-meta">
-                <span class="badge">الوقت ${escapeHtml(order.time)}</span>
-                <span class="badge">الكمية ${order.qty}</span>
+                <span class="badge">${t("time")} ${escapeHtml(order.time)}</span>
+                <span class="badge">${t("qty")} ${order.qty}</span>
               </div>
               <p class="ingredients">${escapeHtml(order.ingredients)}</p>
-              <p class="note">${escapeHtml(order.note || "بدون ملاحظات")}</p>
+              <p class="note">${escapeHtml(order.note || t("noNotes"))}</p>
               <div class="actions">
-                <button class="ghost" type="button" data-status="${order.id}" data-next="cooking">جاري التحضير</button>
-                <button type="button" data-status="${order.id}" data-next="ready">جاهزة</button>
-                <button class="danger" type="button" data-status="${order.id}" data-next="done">تم التسليم</button>
+                <button class="ghost" type="button" data-status="${order.id}" data-next="cooking">${t("markCooking")}</button>
+                <button type="button" data-status="${order.id}" data-next="ready">${t("markReady")}</button>
+                <button class="danger" type="button" data-status="${order.id}" data-next="done">${t("markDone")}</button>
               </div>
             </article>
           `;
@@ -805,11 +1021,11 @@
 
       function statusLabel(status) {
         return {
-          new: "جديد",
-          cooking: "قيد التحضير",
-          ready: "جاهز",
-          done: "تم التسليم"
-        }[status] || "جديد";
+          new: t("statusNew"),
+          cooking: t("statusCooking"),
+          ready: t("statusReady"),
+          done: t("statusDone")
+        }[status] || t("statusNew");
       }
 
       async function orderMeal(mealId) {
@@ -865,7 +1081,8 @@
       }
 
       function updateClock() {
-        refs.clock.textContent = new Intl.DateTimeFormat("ar-SA", {
+        const locale = currentLanguage === "ar" ? "ar-SA" : currentLanguage === "fil" ? "fil-PH" : "en-US";
+        refs.clock.textContent = new Intl.DateTimeFormat(locale, {
           weekday: "long",
           hour: "2-digit",
           minute: "2-digit",
@@ -888,6 +1105,11 @@
 
       refs.phoneMode.addEventListener("click", () => setMode("phone"));
       refs.kitchenMode.addEventListener("click", () => setMode("kitchen"));
+      refs.languageSelect.addEventListener("change", () => {
+        currentLanguage = refs.languageSelect.value;
+        localStorage.setItem(languageKey, currentLanguage);
+        applyLanguage();
+      });
       refs.searchMeal.addEventListener("input", renderMeals);
       refs.defaultQty.addEventListener("input", renderMeals);
 
@@ -979,10 +1201,8 @@
       });
 
       setDefaultTime();
-      setMode(location.hash === "#kitchen" ? "kitchen" : "phone");
-      render();
+      applyLanguage();
       loadServerState();
-      updateClock();
       setInterval(updateClock, 1000);
     </script>
   </body>
