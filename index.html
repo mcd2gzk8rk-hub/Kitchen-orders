@@ -622,6 +622,7 @@
                 <div id="mealGrid" class="meal-grid"></div>
               </div>
               <div id="detailsStep" class="hidden">
+                <article id="selectedMealCard" class="meal-card" style="grid-template-rows: 1fr;"></article>
                 <div class="form-grid">
                   <label>
                     وقت التحضير
@@ -783,6 +784,7 @@
           readyOrders: "جاهزة",
           totalOpen: "إجمالي مفتوح",
           emptyOrders: "لا توجد طلبات مفتوحة حالياً",
+          chooseMeal: "اختيار",
           sendKitchen: "إرسال للمطبخ",
           backToMeals: "رجوع للوجبات",
           qtyAria: "كمية",
@@ -790,9 +792,7 @@
           time: "الوقت",
           qty: "الكمية",
           noNotes: "بدون ملاحظات",
-          markCooking: "جاري التحضير",
           markReady: "جاهزة",
-          markDone: "تم التسليم",
           statusNew: "جديد",
           statusCooking: "قيد التحضير",
           statusReady: "جاهز",
@@ -853,6 +853,7 @@
           readyOrders: "Ready",
           totalOpen: "Open total",
           emptyOrders: "No open orders right now",
+          chooseMeal: "Choose",
           sendKitchen: "Send to kitchen",
           backToMeals: "Back to meals",
           qtyAria: "Quantity",
@@ -860,9 +861,7 @@
           time: "Time",
           qty: "Qty",
           noNotes: "No notes",
-          markCooking: "Start cooking",
           markReady: "Ready",
-          markDone: "Delivered",
           statusNew: "New",
           statusCooking: "Cooking",
           statusReady: "Ready",
@@ -923,6 +922,7 @@
           readyOrders: "Handa na",
           totalOpen: "Kabuuang bukas",
           emptyOrders: "Walang bukas na order ngayon",
+          chooseMeal: "Piliin",
           sendKitchen: "Ipadala sa kusina",
           backToMeals: "Bumalik sa pagkain",
           qtyAria: "Dami",
@@ -930,9 +930,7 @@
           time: "Oras",
           qty: "Dami",
           noNotes: "Walang tala",
-          markCooking: "Simulan lutuin",
           markReady: "Handa na",
-          markDone: "Na-deliver",
           statusNew: "Bago",
           statusCooking: "Niluluto",
           statusReady: "Handa na",
@@ -996,6 +994,7 @@
         categoryStep: document.getElementById("categoryStep"),
         mealStep: document.getElementById("mealStep"),
         detailsStep: document.getElementById("detailsStep"),
+        selectedMealCard: document.getElementById("selectedMealCard"),
         orderStepTitle: document.getElementById("orderStepTitle"),
         orderStepHelp: document.getElementById("orderStepHelp"),
         mealStepTitle: document.getElementById("mealStepTitle"),
@@ -1181,7 +1180,7 @@
               <h3>${escapeHtml(meal.name)}</h3>
               <p class="ingredients">${escapeHtml(meal.ingredients)}</p>
               <div class="order-row">
-                <button type="button" data-choose-meal="${meal.id}">${t("sendKitchen")}</button>
+                <button type="button" data-choose-meal="${meal.id}">${t("chooseMeal")}</button>
                 <input type="number" min="1" max="99" value="${Number(refs.defaultQty.value) || 1}" aria-label="${t("qtyAria")} ${escapeAttr(meal.name)}" data-qty="${meal.id}" />
               </div>
             </div>
@@ -1225,6 +1224,22 @@
         refs.detailsStep.classList.toggle("hidden", step !== "details");
         refs.orderStepTitle.textContent = step === "details" ? t("detailsStepTitle") : step === "meal" ? t("mealStepTitle") : t("orderStepTitle");
         refs.orderStepHelp.textContent = step === "details" ? t("detailsStepHelp") : t("orderStepHelp");
+        renderSelectedMeal();
+      }
+
+      function renderSelectedMeal() {
+        const meal = state.meals.find((item) => item.id === selectedMealId);
+        if (!meal) {
+          refs.selectedMealCard.innerHTML = "";
+          return;
+        }
+        refs.selectedMealCard.innerHTML = `
+          <div class="meal-info">
+            <span class="badge">${t(meal.category || selectedCategory || "lunch")}</span>
+            <h3>${escapeHtml(meal.name)}</h3>
+            <p class="ingredients">${escapeHtml(meal.ingredients)}</p>
+          </div>
+        `;
       }
 
       function renderOrders() {
@@ -1249,9 +1264,7 @@
               <p class="ingredients">${escapeHtml(order.ingredients)}</p>
               <p class="note">${escapeHtml(order.note || t("noNotes"))}</p>
               <div class="actions">
-                <button class="ghost" type="button" data-status="${order.id}" data-next="cooking">${t("markCooking")}</button>
-                <button type="button" data-status="${order.id}" data-next="ready">${t("markReady")}</button>
-                <button class="danger" type="button" data-status="${order.id}" data-next="done">${t("markDone")}</button>
+                ${order.status === "ready" ? "" : `<button type="button" data-status="${order.id}" data-next="ready">${t("markReady")}</button>`}
               </div>
             </article>
           `;

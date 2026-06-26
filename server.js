@@ -209,7 +209,7 @@ async function routeApi(req, res, url) {
   const orderStatus = url.pathname.match(/^\/api\/orders\/([^/]+)\/status$/);
   if (req.method === "PATCH" && orderStatus) {
     const body = await readJson(req);
-    const allowed = new Set(["new", "cooking", "ready", "done"]);
+    const allowed = new Set(["ready", "done"]);
     if (!allowed.has(body.status)) return sendJson(res, 400, { error: "Invalid status" });
     state.orders = state.orders.map((order) => (
       order.id === decodeURIComponent(orderStatus[1]) ? { ...order, status: body.status } : order
