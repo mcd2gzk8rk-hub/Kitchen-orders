@@ -134,7 +134,7 @@
 
       .mode-switch {
         display: grid;
-        grid-template-columns: repeat(2, minmax(96px, 1fr));
+        grid-template-columns: repeat(3, minmax(84px, 1fr));
         gap: 6px;
         padding: 5px;
         border: 1px solid var(--line);
@@ -169,7 +169,14 @@
 
       .phone-layout {
         display: grid;
-        grid-template-columns: minmax(280px, 0.92fr) minmax(340px, 1.5fr);
+        grid-template-columns: 1fr;
+        gap: 22px;
+        align-items: start;
+      }
+
+      .manage-layout {
+        display: none;
+        grid-template-columns: minmax(300px, 0.95fr) minmax(340px, 1.25fr);
         gap: 22px;
         align-items: start;
       }
@@ -304,6 +311,32 @@
         max-width: 300px;
       }
 
+      .step-panel {
+        display: grid;
+        gap: 18px;
+      }
+
+      .choice-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+      }
+
+      .choice-btn {
+        min-height: 76px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        background: var(--surface-strong);
+        color: var(--ink);
+        text-align: start;
+      }
+
+      .choice-btn.active {
+        border-color: var(--accent);
+        background: #e8f5f2;
+        color: var(--accent-dark);
+      }
+
       .meal-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -384,11 +417,13 @@
       }
 
       .kitchen-layout.active,
-      .phone-layout.active {
+      .phone-layout.active,
+      .manage-layout.active {
         display: grid;
       }
 
-      .phone-layout:not(.active) {
+      .phone-layout:not(.active),
+      .manage-layout:not(.active) {
         display: none;
       }
 
@@ -497,7 +532,8 @@
           flex-direction: column;
         }
 
-        .phone-layout {
+        .phone-layout,
+        .manage-layout {
           grid-template-columns: 1fr;
         }
 
@@ -556,7 +592,8 @@
           </div>
         </div>
         <nav class="mode-switch" aria-label="تبديل الواجهة">
-          <button id="phoneMode" class="active" type="button">الجوال</button>
+          <button id="phoneMode" class="active" type="button">الطلب</button>
+          <button id="manageMode" type="button">الإدارة</button>
           <button id="kitchenMode" type="button">المطبخ</button>
         </nav>
         <select id="languageSelect" class="language-select" aria-label="Language">
@@ -568,10 +605,55 @@
 
       <main>
         <section id="phoneView" class="phone-layout active">
+          <section class="panel">
+            <div class="panel-head">
+              <h2 id="orderStepTitle">اختيار نوع الطلب</h2>
+              <p id="orderStepHelp">اختر فطور أو غداء أو عشاء أو سناك، ثم اختر الوجبة والوقت والمكان.</p>
+            </div>
+            <div class="panel-body step-panel">
+              <div id="categoryStep">
+                <div id="categoryGrid" class="choice-grid"></div>
+              </div>
+              <div id="mealStep" class="hidden">
+                <div class="catalog-tools">
+                  <h2 class="section-title" id="mealStepTitle">اختيار الوجبة</h2>
+                  <input id="searchMeal" placeholder="بحث عن وجبة" />
+                </div>
+                <div id="mealGrid" class="meal-grid"></div>
+              </div>
+              <div id="detailsStep" class="hidden">
+                <div class="form-grid">
+                  <label>
+                    وقت التحضير
+                    <input id="wantedTime" type="time" required />
+                  </label>
+                  <label>
+                    الكمية
+                    <input id="defaultQty" type="number" min="1" max="99" value="1" />
+                  </label>
+                  <label class="full">
+                    المكان
+                    <select id="servicePlace"></select>
+                  </label>
+                  <label class="full">
+                    ملاحظة للطلب
+                    <input id="orderNote" placeholder="مثال: بدون فلفل، زيادة صوص" />
+                  </label>
+                </div>
+                <div class="actions">
+                  <button id="sendOrder" type="button">إرسال للمطبخ</button>
+                  <button id="backToMeals" class="ghost" type="button">رجوع للوجبات</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section id="manageView" class="manage-layout">
           <aside class="panel">
             <div class="panel-head">
               <h2>إضافة وجبة</h2>
-              <p>أدخل اسم الوجبة ومكوناتها لتظهر مباشرة ضمن خيارات الطلب.</p>
+              <p>أدخل اسم الوجبة ومكوناتها وحدد نوعها لتظهر في صفحة الطلب.</p>
             </div>
             <div class="panel-body">
               <div class="visual-strip" aria-hidden="true">
@@ -580,6 +662,10 @@
                 <div class="food-tile tile-soup">شوربة</div>
               </div>
               <form id="mealForm">
+                <label>
+                  نوع الوجبة
+                  <select id="mealCategory" required></select>
+                </label>
                 <label>
                   اسم الوجبة
                   <input id="mealName" autocomplete="off" required placeholder="مثال: كبسة دجاج" />
@@ -602,30 +688,20 @@
 
           <section class="panel">
             <div class="panel-head">
-              <div class="catalog-tools">
-                <div>
-                  <h2 class="section-title">اختيار الطلب</h2>
-                  <p>حدد الوقت والكمية ثم أرسل الطلب لشاشة المطبخ.</p>
-                </div>
-                <input id="searchMeal" placeholder="بحث عن وجبة" />
-              </div>
+              <h2 id="placesTitle">أماكن الخدمة</h2>
+              <p id="placesHelp">أضف الأماكن التي يمكن إرسال الطلبات إليها.</p>
             </div>
             <div class="panel-body">
-              <div class="form-grid">
-                <label>
-                  وقت التحضير
-                  <input id="wantedTime" type="time" required />
-                </label>
-                <label>
-                  الكمية الافتراضية
-                  <input id="defaultQty" type="number" min="1" max="99" value="1" />
-                </label>
+              <form id="placeForm" class="form-grid">
                 <label class="full">
-                  ملاحظة للطلب
-                  <input id="orderNote" placeholder="مثال: بدون فلفل، زيادة صوص" />
+                  اسم المكان
+                  <input id="placeName" autocomplete="off" required placeholder="مثال: المجلس، المكتب، غرفة 2" />
                 </label>
-              </div>
-              <div id="mealGrid" class="meal-grid"></div>
+                <div class="actions full">
+                  <button type="submit">حفظ المكان</button>
+                </div>
+              </form>
+              <div id="placesList" class="meal-grid"></div>
             </div>
           </section>
         </section>
@@ -656,20 +732,36 @@
       const usingServer = location.protocol === "http:" || location.protocol === "https:";
       const sync = !usingServer && "BroadcastChannel" in window ? new BroadcastChannel("kitchen-orders") : null;
       let currentLanguage = localStorage.getItem(languageKey) || "ar";
+      let selectedCategory = "";
+      let selectedMealId = "";
+
+      const mealCategories = ["breakfast", "lunch", "dinner", "snack"];
 
       const translations = {
         ar: {
           title: "طلبات المطبخ",
           subtitlePhone: "اختيار الوجبات وجدولة الطلبات",
           subtitleKitchen: "متابعة الطلبات داخل المطبخ",
-          phoneMode: "الجوال",
+          subtitleManage: "إدارة الوجبات وأماكن الخدمة",
+          phoneMode: "الطلب",
+          manageMode: "الإدارة",
           kitchenMode: "المطبخ",
+          orderStepTitle: "اختيار نوع الطلب",
+          orderStepHelp: "اختر فطور أو غداء أو عشاء أو سناك، ثم اختر الوجبة والوقت والمكان.",
+          mealStepTitle: "اختيار الوجبة",
+          detailsStepTitle: "تفاصيل الطلب",
+          detailsStepHelp: "حدد وقت الطلب والمكان المطلوب ثم أرسله للمطبخ.",
+          breakfast: "فطور",
+          lunch: "غداء",
+          dinner: "عشاء",
+          snack: "سناك",
           addMeal: "إضافة وجبة",
-          addMealHelp: "أدخل اسم الوجبة ومكوناتها لتظهر مباشرة ضمن خيارات الطلب.",
+          addMealHelp: "أدخل اسم الوجبة ومكوناتها وحدد نوعها لتظهر في صفحة الطلب.",
           rice: "أرز",
           grill: "مشويات",
           soup: "شوربة",
           mealName: "اسم الوجبة",
+          mealCategory: "نوع الوجبة",
           mealNamePlaceholder: "مثال: كبسة دجاج",
           ingredients: "المكونات",
           ingredientsPlaceholder: "دجاج، أرز، بهارات، سلطة",
@@ -680,7 +772,8 @@
           chooseOrderHelp: "حدد الوقت والكمية ثم أرسل الطلب لشاشة المطبخ.",
           searchMeal: "بحث عن وجبة",
           wantedTime: "وقت التحضير",
-          defaultQty: "الكمية الافتراضية",
+          defaultQty: "الكمية",
+          servicePlace: "المكان",
           orderNote: "ملاحظة للطلب",
           orderNotePlaceholder: "مثال: بدون فلفل، زيادة صوص",
           kitchenScreen: "شاشة المطبخ",
@@ -691,6 +784,7 @@
           totalOpen: "إجمالي مفتوح",
           emptyOrders: "لا توجد طلبات مفتوحة حالياً",
           sendKitchen: "إرسال للمطبخ",
+          backToMeals: "رجوع للوجبات",
           qtyAria: "كمية",
           deleteMeal: "حذف الوجبة",
           time: "الوقت",
@@ -703,20 +797,41 @@
           statusCooking: "قيد التحضير",
           statusReady: "جاهز",
           statusDone: "تم التسليم",
-          apiError: "تعذر تنفيذ العملية"
+          apiError: "تعذر تنفيذ العملية",
+          placesTitle: "أماكن الخدمة",
+          placesHelp: "أضف الأماكن التي يمكن إرسال الطلبات إليها.",
+          placeName: "اسم المكان",
+          placeNamePlaceholder: "مثال: المجلس، المكتب، غرفة 2",
+          savePlace: "حفظ المكان",
+          deletePlace: "حذف المكان",
+          noPlaces: "أضف مكان خدمة أولاً",
+          place: "المكان",
+          noMeals: "لا توجد وجبات لهذا النوع"
         },
         en: {
           title: "Kitchen Orders",
           subtitlePhone: "Choose meals and schedule orders",
           subtitleKitchen: "Track orders inside the kitchen",
+          subtitleManage: "Manage meals and service places",
           phoneMode: "Phone",
+          manageMode: "Manage",
           kitchenMode: "Kitchen",
+          orderStepTitle: "Choose Order Type",
+          orderStepHelp: "Choose breakfast, lunch, dinner, or snack, then select the meal, time, and place.",
+          mealStepTitle: "Choose Meal",
+          detailsStepTitle: "Order Details",
+          detailsStepHelp: "Select the requested time and place, then send it to the kitchen.",
+          breakfast: "Breakfast",
+          lunch: "Lunch",
+          dinner: "Dinner",
+          snack: "Snack",
           addMeal: "Add Meal",
-          addMealHelp: "Enter the meal name and ingredients so it appears in the order options.",
+          addMealHelp: "Enter the meal name, ingredients, and type so it appears in the order page.",
           rice: "Rice",
           grill: "Grill",
           soup: "Soup",
           mealName: "Meal name",
+          mealCategory: "Meal type",
           mealNamePlaceholder: "Example: Chicken kabsa",
           ingredients: "Ingredients",
           ingredientsPlaceholder: "Chicken, rice, spices, salad",
@@ -727,7 +842,8 @@
           chooseOrderHelp: "Select the time and quantity, then send the order to the kitchen screen.",
           searchMeal: "Search meals",
           wantedTime: "Preparation time",
-          defaultQty: "Default quantity",
+          defaultQty: "Quantity",
+          servicePlace: "Place",
           orderNote: "Order note",
           orderNotePlaceholder: "Example: no pepper, extra sauce",
           kitchenScreen: "Kitchen Screen",
@@ -738,6 +854,7 @@
           totalOpen: "Open total",
           emptyOrders: "No open orders right now",
           sendKitchen: "Send to kitchen",
+          backToMeals: "Back to meals",
           qtyAria: "Quantity",
           deleteMeal: "Delete meal",
           time: "Time",
@@ -750,20 +867,41 @@
           statusCooking: "Cooking",
           statusReady: "Ready",
           statusDone: "Delivered",
-          apiError: "Could not complete the action"
+          apiError: "Could not complete the action",
+          placesTitle: "Service Places",
+          placesHelp: "Add places where orders can be delivered.",
+          placeName: "Place name",
+          placeNamePlaceholder: "Example: Majlis, office, room 2",
+          savePlace: "Save place",
+          deletePlace: "Delete place",
+          noPlaces: "Add a service place first",
+          place: "Place",
+          noMeals: "No meals for this type"
         },
         fil: {
           title: "Mga Order sa Kusina",
           subtitlePhone: "Pumili ng pagkain at iskedyul ng order",
           subtitleKitchen: "Subaybayan ang mga order sa kusina",
+          subtitleManage: "Ayusin ang pagkain at mga lugar ng serbisyo",
           phoneMode: "Telepono",
+          manageMode: "Ayusin",
           kitchenMode: "Kusina",
+          orderStepTitle: "Piliin ang Uri ng Order",
+          orderStepHelp: "Pumili ng almusal, tanghalian, hapunan, o meryenda, tapos piliin ang pagkain, oras, at lugar.",
+          mealStepTitle: "Pumili ng Pagkain",
+          detailsStepTitle: "Detalye ng Order",
+          detailsStepHelp: "Piliin ang oras at lugar, tapos ipadala sa kusina.",
+          breakfast: "Almusal",
+          lunch: "Tanghalian",
+          dinner: "Hapunan",
+          snack: "Meryenda",
           addMeal: "Magdagdag ng Pagkain",
-          addMealHelp: "Ilagay ang pangalan ng pagkain at mga sangkap para lumabas sa pagpipilian.",
+          addMealHelp: "Ilagay ang pangalan, sangkap, at uri para lumabas sa order page.",
           rice: "Kanin",
           grill: "Inihaw",
           soup: "Sopas",
           mealName: "Pangalan ng pagkain",
+          mealCategory: "Uri ng pagkain",
           mealNamePlaceholder: "Halimbawa: Chicken kabsa",
           ingredients: "Mga sangkap",
           ingredientsPlaceholder: "Manok, kanin, pampalasa, salad",
@@ -774,7 +912,8 @@
           chooseOrderHelp: "Piliin ang oras at dami, tapos ipadala sa screen ng kusina.",
           searchMeal: "Maghanap ng pagkain",
           wantedTime: "Oras ng paghahanda",
-          defaultQty: "Default na dami",
+          defaultQty: "Dami",
+          servicePlace: "Lugar",
           orderNote: "Tala sa order",
           orderNotePlaceholder: "Halimbawa: walang sili, dagdag sauce",
           kitchenScreen: "Screen ng Kusina",
@@ -785,6 +924,7 @@
           totalOpen: "Kabuuang bukas",
           emptyOrders: "Walang bukas na order ngayon",
           sendKitchen: "Ipadala sa kusina",
+          backToMeals: "Bumalik sa pagkain",
           qtyAria: "Dami",
           deleteMeal: "Burahin ang pagkain",
           time: "Oras",
@@ -797,25 +937,44 @@
           statusCooking: "Niluluto",
           statusReady: "Handa na",
           statusDone: "Na-deliver",
-          apiError: "Hindi nakumpleto ang aksyon"
+          apiError: "Hindi nakumpleto ang aksyon",
+          placesTitle: "Mga Lugar ng Serbisyo",
+          placesHelp: "Magdagdag ng lugar kung saan dadalhin ang order.",
+          placeName: "Pangalan ng lugar",
+          placeNamePlaceholder: "Halimbawa: Majlis, opisina, room 2",
+          savePlace: "I-save ang lugar",
+          deletePlace: "Burahin ang lugar",
+          noPlaces: "Magdagdag muna ng lugar",
+          place: "Lugar",
+          noMeals: "Walang pagkain para sa uri na ito"
         }
       };
 
       const demoMeals = [
         {
           id: crypto.randomUUID(),
+          category: "breakfast",
+          name: "فطور عربي",
+          ingredients: "بيض، فول، خبز، جبن، خضار",
+          image: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=700&q=70"
+        },
+        {
+          id: crypto.randomUUID(),
+          category: "lunch",
           name: "كبسة دجاج",
           ingredients: "دجاج، أرز بسمتي، طماطم، بصل، بهارات كبسة",
           image: "https://images.unsplash.com/photo-1599043513900-ed6fe01d3833?auto=format&fit=crop&w=700&q=70"
         },
         {
           id: crypto.randomUUID(),
+          category: "dinner",
           name: "مشويات مشكلة",
           ingredients: "كباب، شيش طاووق، خضار مشوية، خبز",
           image: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=700&q=70"
         },
         {
           id: crypto.randomUUID(),
+          category: "snack",
           name: "سلطة فتوش",
           ingredients: "خس، خيار، طماطم، نعناع، خبز محمص، دبس رمان",
           image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=70"
@@ -826,20 +985,36 @@
 
       const refs = {
         phoneMode: document.getElementById("phoneMode"),
+        manageMode: document.getElementById("manageMode"),
         kitchenMode: document.getElementById("kitchenMode"),
         languageSelect: document.getElementById("languageSelect"),
         phoneView: document.getElementById("phoneView"),
+        manageView: document.getElementById("manageView"),
         kitchenView: document.getElementById("kitchenView"),
         subtitle: document.getElementById("subtitle"),
+        categoryGrid: document.getElementById("categoryGrid"),
+        categoryStep: document.getElementById("categoryStep"),
+        mealStep: document.getElementById("mealStep"),
+        detailsStep: document.getElementById("detailsStep"),
+        orderStepTitle: document.getElementById("orderStepTitle"),
+        orderStepHelp: document.getElementById("orderStepHelp"),
+        mealStepTitle: document.getElementById("mealStepTitle"),
         mealForm: document.getElementById("mealForm"),
+        mealCategory: document.getElementById("mealCategory"),
         mealName: document.getElementById("mealName"),
         mealIngredients: document.getElementById("mealIngredients"),
         mealImage: document.getElementById("mealImage"),
+        placeForm: document.getElementById("placeForm"),
+        placeName: document.getElementById("placeName"),
+        placesList: document.getElementById("placesList"),
         resetMeals: document.getElementById("resetMeals"),
         searchMeal: document.getElementById("searchMeal"),
         wantedTime: document.getElementById("wantedTime"),
         defaultQty: document.getElementById("defaultQty"),
+        servicePlace: document.getElementById("servicePlace"),
         orderNote: document.getElementById("orderNote"),
+        sendOrder: document.getElementById("sendOrder"),
+        backToMeals: document.getElementById("backToMeals"),
         mealGrid: document.getElementById("mealGrid"),
         ordersGrid: document.getElementById("ordersGrid"),
         emptyOrders: document.getElementById("emptyOrders"),
@@ -854,10 +1029,24 @@
         try {
           const saved = JSON.parse(localStorage.getItem(storeKey));
           if (saved && Array.isArray(saved.meals) && Array.isArray(saved.orders)) {
-            return saved;
+            return normalizeState(saved);
           }
         } catch (error) {}
-        return { meals: demoMeals, orders: [] };
+        return normalizeState({ meals: demoMeals, orders: [] });
+      }
+
+      function normalizeState(nextState) {
+        return {
+          meals: (nextState.meals || []).map((meal) => ({ category: "lunch", ...meal })),
+          orders: nextState.orders || [],
+          places: nextState.places && nextState.places.length
+            ? nextState.places
+            : [
+                { id: "place-majlis", name: "المجلس" },
+                { id: "place-office", name: "المكتب" },
+                { id: "place-room", name: "غرفة 2" }
+              ]
+        };
       }
 
       function saveState(emit = true) {
@@ -872,7 +1061,7 @@
         });
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || t("apiError"));
-        state = payload;
+        state = normalizeState(payload);
         render();
         return payload;
       }
@@ -881,7 +1070,7 @@
         if (!usingServer) return;
         try {
           const response = await fetch("/api/state", { cache: "no-store" });
-          state = await response.json();
+          state = normalizeState(await response.json());
           render();
         } catch (error) {
           console.warn(error);
@@ -913,12 +1102,16 @@
 
         setText(".brand h1", t("title"));
         refs.phoneMode.textContent = t("phoneMode");
+        refs.manageMode.textContent = t("manageMode");
         refs.kitchenMode.textContent = t("kitchenMode");
-        setText("#phoneView aside .panel-head h2", t("addMeal"));
-        setText("#phoneView aside .panel-head p", t("addMealHelp"));
+        refs.orderStepTitle.textContent = selectedMealId ? t("detailsStepTitle") : selectedCategory ? t("mealStepTitle") : t("orderStepTitle");
+        refs.orderStepHelp.textContent = selectedMealId ? t("detailsStepHelp") : t("orderStepHelp");
+        setText("#manageView aside .panel-head h2", t("addMeal"));
+        setText("#manageView aside .panel-head p", t("addMealHelp"));
         setText(".tile-rice", t("rice"));
         setText(".tile-grill", t("grill"));
         setText(".tile-soup", t("soup"));
+        setLabel("mealCategory", t("mealCategory"));
         setLabel("mealName", t("mealName"));
         setLabel("mealIngredients", t("ingredients"));
         setLabel("mealImage", t("imageUrl"));
@@ -927,13 +1120,20 @@
         refs.mealImage.placeholder = "https://...";
         document.querySelector("#mealForm button[type='submit']").textContent = t("saveMeal");
         refs.resetMeals.textContent = t("resetMeals");
-        setText(".catalog-tools .section-title", t("chooseOrder"));
-        setText(".catalog-tools p", t("chooseOrderHelp"));
+        refs.mealStepTitle.textContent = t("mealStepTitle");
         refs.searchMeal.placeholder = t("searchMeal");
         setLabel("wantedTime", t("wantedTime"));
         setLabel("defaultQty", t("defaultQty"));
+        setLabel("servicePlace", t("servicePlace"));
         setLabel("orderNote", t("orderNote"));
         refs.orderNote.placeholder = t("orderNotePlaceholder");
+        refs.sendOrder.textContent = t("sendKitchen");
+        refs.backToMeals.textContent = t("backToMeals");
+        setText("#placesTitle", t("placesTitle"));
+        setText("#placesHelp", t("placesHelp"));
+        setLabel("placeName", t("placeName"));
+        refs.placeName.placeholder = t("placeNamePlaceholder");
+        document.querySelector("#placeForm button[type='submit']").textContent = t("savePlace");
         setText("#kitchenView .board-head h2", t("kitchenScreen"));
         setText("#kitchenView .board-head .note", t("sortedOrders"));
         setText("#newCount + span", t("newOrders"));
@@ -941,42 +1141,90 @@
         setText("#readyCount + span", t("readyOrders"));
         setText("#totalCount + span", t("totalOpen"));
         refs.emptyOrders.textContent = t("emptyOrders");
-        setMode(location.hash === "#kitchen" ? "kitchen" : "phone");
+        renderCategoryOptions();
+        renderPlaces();
+        setMode(getModeFromHash());
         render();
         updateClock();
       }
 
       function setMode(mode) {
         const kitchen = mode === "kitchen";
-        refs.phoneMode.classList.toggle("active", !kitchen);
+        const manage = mode === "manage";
+        refs.phoneMode.classList.toggle("active", !kitchen && !manage);
+        refs.manageMode.classList.toggle("active", manage);
         refs.kitchenMode.classList.toggle("active", kitchen);
-        refs.phoneView.classList.toggle("active", !kitchen);
+        refs.phoneView.classList.toggle("active", !kitchen && !manage);
+        refs.manageView.classList.toggle("active", manage);
         refs.kitchenView.classList.toggle("active", kitchen);
-        refs.subtitle.textContent = kitchen ? t("subtitleKitchen") : t("subtitlePhone");
-        history.replaceState(null, "", kitchen ? "#kitchen" : "#phone");
+        refs.subtitle.textContent = kitchen ? t("subtitleKitchen") : manage ? t("subtitleManage") : t("subtitlePhone");
+        history.replaceState(null, "", kitchen ? "#kitchen" : manage ? "#manage" : "#phone");
+      }
+
+      function getModeFromHash() {
+        if (location.hash === "#kitchen") return "kitchen";
+        if (location.hash === "#manage") return "manage";
+        return "phone";
       }
 
       function renderMeals() {
         const query = refs.searchMeal.value.trim().toLowerCase();
         const meals = state.meals.filter((meal) => {
           const haystack = `${meal.name} ${meal.ingredients}`.toLowerCase();
-          return haystack.includes(query);
+          return meal.category === selectedCategory && haystack.includes(query);
         });
 
-        refs.mealGrid.innerHTML = meals.map((meal) => `
+        refs.mealGrid.innerHTML = meals.length ? meals.map((meal) => `
           <article class="meal-card">
             <div class="meal-photo" style="--photo: url('${escapeAttr(meal.image || "")}')"></div>
             <div class="meal-info">
               <h3>${escapeHtml(meal.name)}</h3>
               <p class="ingredients">${escapeHtml(meal.ingredients)}</p>
               <div class="order-row">
-                <button type="button" data-order="${meal.id}">${t("sendKitchen")}</button>
+                <button type="button" data-choose-meal="${meal.id}">${t("sendKitchen")}</button>
                 <input type="number" min="1" max="99" value="${Number(refs.defaultQty.value) || 1}" aria-label="${t("qtyAria")} ${escapeAttr(meal.name)}" data-qty="${meal.id}" />
               </div>
-              <button class="danger" type="button" data-delete-meal="${meal.id}">${t("deleteMeal")}</button>
             </div>
           </article>
+        `).join("") : `<div class="empty">${t("noMeals")}</div>`;
+      }
+
+      function renderCategoryOptions() {
+        refs.categoryGrid.innerHTML = mealCategories.map((category) => `
+          <button class="choice-btn ${selectedCategory === category ? "active" : ""}" type="button" data-category="${category}">
+            ${t(category)}
+          </button>
         `).join("");
+
+        refs.mealCategory.innerHTML = mealCategories.map((category) => `
+          <option value="${category}">${t(category)}</option>
+        `).join("");
+      }
+
+      function renderPlaces() {
+        refs.servicePlace.innerHTML = state.places.map((place) => `
+          <option value="${escapeAttr(place.id)}">${escapeHtml(place.name)}</option>
+        `).join("");
+        if (!state.places.length) {
+          refs.servicePlace.innerHTML = `<option value="">${t("noPlaces")}</option>`;
+        }
+
+        refs.placesList.innerHTML = state.places.length ? state.places.map((place) => `
+          <article class="meal-card" style="grid-template-rows: 1fr;">
+            <div class="meal-info">
+              <h3>${escapeHtml(place.name)}</h3>
+              <button class="danger" type="button" data-delete-place="${place.id}">${t("deletePlace")}</button>
+            </div>
+          </article>
+        `).join("") : `<div class="empty">${t("noPlaces")}</div>`;
+      }
+
+      function showOrderStep(step) {
+        refs.categoryStep.classList.toggle("hidden", step !== "category");
+        refs.mealStep.classList.toggle("hidden", step !== "meal");
+        refs.detailsStep.classList.toggle("hidden", step !== "details");
+        refs.orderStepTitle.textContent = step === "details" ? t("detailsStepTitle") : step === "meal" ? t("mealStepTitle") : t("orderStepTitle");
+        refs.orderStepHelp.textContent = step === "details" ? t("detailsStepHelp") : t("orderStepHelp");
       }
 
       function renderOrders() {
@@ -993,8 +1241,10 @@
                 <span class="badge">${statusText}</span>
               </div>
               <div class="order-meta">
+                <span class="badge">${t(order.category || "lunch")}</span>
                 <span class="badge">${t("time")} ${escapeHtml(order.time)}</span>
                 <span class="badge">${t("qty")} ${order.qty}</span>
+                <span class="badge">${t("place")} ${escapeHtml(order.placeName || "")}</span>
               </div>
               <p class="ingredients">${escapeHtml(order.ingredients)}</p>
               <p class="note">${escapeHtml(order.note || t("noNotes"))}</p>
@@ -1015,7 +1265,9 @@
       }
 
       function render() {
+        renderCategoryOptions();
         renderMeals();
+        renderPlaces();
         renderOrders();
       }
 
@@ -1028,9 +1280,15 @@
         }[status] || t("statusNew");
       }
 
-      async function orderMeal(mealId) {
+      async function orderMeal() {
+        const mealId = selectedMealId;
         const meal = state.meals.find((item) => item.id === mealId);
         if (!meal) return;
+        const place = state.places.find((item) => item.id === refs.servicePlace.value);
+        if (!place) {
+          setMode("manage");
+          return;
+        }
 
         const qtyInput = document.querySelector(`[data-qty="${CSS.escape(mealId)}"]`);
         const qty = Math.max(1, Math.min(99, Number(qtyInput?.value) || Number(refs.defaultQty.value) || 1));
@@ -1040,7 +1298,9 @@
           mealId,
           qty,
           time,
-          note: refs.orderNote.value.trim()
+          note: refs.orderNote.value.trim(),
+          placeId: place.id,
+          placeName: place.name
         };
 
         if (usingServer) {
@@ -1054,9 +1314,12 @@
             mealId,
             mealName: meal.name,
             ingredients: meal.ingredients,
+            category: meal.category || selectedCategory,
             qty,
             time,
             note: refs.orderNote.value.trim(),
+            placeId: place.id,
+            placeName: place.name,
             status: "new",
             createdAt: Date.now()
           });
@@ -1065,6 +1328,9 @@
         }
 
         refs.orderNote.value = "";
+        selectedCategory = "";
+        selectedMealId = "";
+        showOrderStep("category");
         setMode("kitchen");
       }
 
@@ -1104,6 +1370,7 @@
       }
 
       refs.phoneMode.addEventListener("click", () => setMode("phone"));
+      refs.manageMode.addEventListener("click", () => setMode("manage"));
       refs.kitchenMode.addEventListener("click", () => setMode("kitchen"));
       refs.languageSelect.addEventListener("change", () => {
         currentLanguage = refs.languageSelect.value;
@@ -1112,10 +1379,27 @@
       });
       refs.searchMeal.addEventListener("input", renderMeals);
       refs.defaultQty.addEventListener("input", renderMeals);
+      refs.sendOrder.addEventListener("click", () => orderMeal());
+      refs.backToMeals.addEventListener("click", () => {
+        selectedMealId = "";
+        showOrderStep("meal");
+      });
+
+      refs.categoryGrid.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-category]");
+        if (!button) return;
+        selectedCategory = button.dataset.category;
+        selectedMealId = "";
+        refs.searchMeal.value = "";
+        renderCategoryOptions();
+        renderMeals();
+        showOrderStep("meal");
+      });
 
       refs.mealForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const meal = {
+          category: refs.mealCategory.value,
           name: refs.mealName.value.trim(),
           ingredients: refs.mealIngredients.value.trim(),
           image: refs.mealImage.value.trim()
@@ -1135,6 +1419,22 @@
         refs.mealForm.reset();
       });
 
+      refs.placeForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const place = { name: refs.placeName.value.trim() };
+        if (usingServer) {
+          await api("/api/places", {
+            method: "POST",
+            body: JSON.stringify(place)
+          });
+        } else {
+          state.places.push({ id: crypto.randomUUID(), ...place });
+          saveState();
+          renderPlaces();
+        }
+        refs.placeForm.reset();
+      });
+
       refs.resetMeals.addEventListener("click", async () => {
         if (usingServer) {
           await api("/api/reset-meals", { method: "POST" });
@@ -1146,9 +1446,12 @@
       });
 
       refs.mealGrid.addEventListener("click", async (event) => {
-        const orderButton = event.target.closest("[data-order]");
+        const chooseButton = event.target.closest("[data-choose-meal]");
         const deleteButton = event.target.closest("[data-delete-meal]");
-        if (orderButton) orderMeal(orderButton.dataset.order);
+        if (chooseButton) {
+          selectedMealId = chooseButton.dataset.chooseMeal;
+          showOrderStep("details");
+        }
         if (deleteButton) {
           if (usingServer) {
             await api(`/api/meals/${encodeURIComponent(deleteButton.dataset.deleteMeal)}`, { method: "DELETE" });
@@ -1157,6 +1460,18 @@
             saveState();
             renderMeals();
           }
+        }
+      });
+
+      refs.placesList.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-delete-place]");
+        if (!button) return;
+        if (usingServer) {
+          await api(`/api/places/${encodeURIComponent(button.dataset.deletePlace)}`, { method: "DELETE" });
+        } else {
+          state.places = state.places.filter((place) => place.id !== button.dataset.deletePlace);
+          saveState();
+          renderPlaces();
         }
       });
 
@@ -1197,7 +1512,7 @@
       }
 
       window.addEventListener("hashchange", () => {
-        setMode(location.hash === "#kitchen" ? "kitchen" : "phone");
+        setMode(getModeFromHash());
       });
 
       setDefaultTime();

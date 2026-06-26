@@ -11,33 +11,57 @@ const dataFile = path.join(dataRoot, "kitchen-data.json");
 const demoMeals = [
   {
     id: crypto.randomUUID(),
+    category: "breakfast",
+    name: "فطور عربي",
+    ingredients: "بيض، فول، خبز، جبن، خضار",
+    image: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=700&q=70"
+  },
+  {
+    id: crypto.randomUUID(),
+    category: "lunch",
     name: "كبسة دجاج",
     ingredients: "دجاج، أرز بسمتي، طماطم، بصل، بهارات كبسة",
     image: "https://images.unsplash.com/photo-1599043513900-ed6fe01d3833?auto=format&fit=crop&w=700&q=70"
   },
   {
     id: crypto.randomUUID(),
+    category: "dinner",
     name: "مشويات مشكلة",
     ingredients: "كباب، شيش طاووق، خضار مشوية، خبز",
     image: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=700&q=70"
   },
   {
     id: crypto.randomUUID(),
+    category: "snack",
     name: "سلطة فتوش",
     ingredients: "خس، خيار، طماطم، نعناع، خبز محمص، دبس رمان",
     image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=70"
   }
 ];
 
+const demoPlaces = [
+  { id: "place-majlis", name: "المجلس" },
+  { id: "place-office", name: "المكتب" },
+  { id: "place-room", name: "غرفة 2" }
+];
+
 let state = loadState();
 const clients = new Set();
+
+function normalizeState(nextState) {
+  return {
+    meals: (nextState.meals || []).map((meal) => ({ category: "lunch", ...meal })),
+    orders: nextState.orders || [],
+    places: nextState.places && nextState.places.length ? nextState.places : demoPlaces
+  };
+}
 
 function loadState() {
   try {
     const saved = JSON.parse(fs.readFileSync(dataFile, "utf8"));
-    if (Array.isArray(saved.meals) && Array.isArray(saved.orders)) return saved;
+    if (Array.isArray(saved.meals) && Array.isArray(saved.orders)) return normalizeState(saved);
   } catch (error) {}
-  return { meals: demoMeals, orders: [] };
+  return normalizeState({ meals: demoMeals, orders: [], places: demoPlaces });
 }
 
 function saveState() {
@@ -83,6 +107,10 @@ function cleanText(value, max = 500) {
   return String(value || "").trim().slice(0, max);
 }
 
+function cleanCategory(value) {
+  return ["breakfast", "lunch", "dinner", "snack"].includes(value) ? value : "lunch";
+}
+
 async function routeApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/state") {
     return sendJson(res, 200, state);
@@ -104,11 +132,12 @@ async function routeApi(req, res, url) {
     const body = await readJson(req);
     const meal = {
       id: crypto.randomUUID(),
+      category: cleanCategory(body.category),
       name: cleanText(body.name, 80),
       ingredients: cleanText(body.ingredients, 800),
       image: cleanText(body.image, 500)
     };
-    if (!meal.name || !meal.ingredients) return sendJson(res, 400, { error: "اسم الوجبة والمكونات مطلوبة" });
+    if (!meal.name || !meal.ingredients) return sendJson(res, 400, { error: "Meal name and ingredients are required" });
     state.meals.unshift(meal);
     saveState();
     broadcast();
@@ -130,19 +159,45 @@ async function routeApi(req, res, url) {
     return sendJson(res, 200, state);
   }
 
+  if (req.method === "POST" && url.pathname === "/api/places") {
+    const body = await readJson(req);
+    const place = {
+      id: crypto.randomUUID(),
+      name: cleanText(body.name, 80)
+    };
+    if (!place.name) return sendJson(res, 400, { error: "Place name is required" });
+    state.places.push(place);
+    saveState();
+    broadcast();
+    return sendJson(res, 201, state);
+  }
+
+  const placeDelete = url.pathname.match(/^\/api\/places\/([^/]+)$/);
+  if (req.method === "DELETE" && placeDelete) {
+    state.places = state.places.filter((place) => place.id !== decodeURIComponent(placeDelete[1]));
+    saveState();
+    broadcast();
+    return sendJson(res, 200, state);
+  }
+
   if (req.method === "POST" && url.pathname === "/api/orders") {
     const body = await readJson(req);
     const meal = state.meals.find((item) => item.id === body.mealId);
-    if (!meal) return sendJson(res, 404, { error: "الوجبة غير موجودة" });
+    if (!meal) return sendJson(res, 404, { error: "Meal not found" });
+    const place = state.places.find((item) => item.id === body.placeId) || { id: "", name: cleanText(body.placeName, 80) };
+    if (!place.name) return sendJson(res, 400, { error: "Place is required" });
     const qty = Math.max(1, Math.min(99, Number(body.qty) || 1));
     state.orders.push({
       id: crypto.randomUUID(),
       mealId: meal.id,
       mealName: meal.name,
       ingredients: meal.ingredients,
+      category: meal.category || "lunch",
       qty,
       time: cleanText(body.time, 20),
       note: cleanText(body.note, 300),
+      placeId: place.id,
+      placeName: place.name,
       status: "new",
       createdAt: Date.now()
     });
@@ -155,7 +210,7 @@ async function routeApi(req, res, url) {
   if (req.method === "PATCH" && orderStatus) {
     const body = await readJson(req);
     const allowed = new Set(["new", "cooking", "ready", "done"]);
-    if (!allowed.has(body.status)) return sendJson(res, 400, { error: "حالة غير صحيحة" });
+    if (!allowed.has(body.status)) return sendJson(res, 400, { error: "Invalid status" });
     state.orders = state.orders.map((order) => (
       order.id === decodeURIComponent(orderStatus[1]) ? { ...order, status: body.status } : order
     ));
