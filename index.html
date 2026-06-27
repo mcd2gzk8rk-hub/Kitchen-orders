@@ -756,11 +756,11 @@
                 </label>
                 <label>
                   المكونات
-                  <textarea id="mealIngredients" required placeholder="دجاج، أرز، بهارات، سلطة"></textarea>
+                  <textarea id="mealIngredients" placeholder="دجاج، أرز، بهارات، سلطة"></textarea>
                 </label>
                 <label>
-                  رابط صورة اختياري
-                  <input id="mealImage" inputmode="url" placeholder="https://..." />
+                  صورة اختيارية
+                  <input id="mealImage" type="file" accept="image/*" />
                 </label>
                 <div class="full">
                   <label>
@@ -902,9 +902,9 @@
           mealName: "اسم الوجبة",
           mealCategory: "نوع الوجبة",
           mealNamePlaceholder: "مثال: كبسة دجاج",
-          ingredients: "المكونات",
+          ingredients: "المكونات اختيارية",
           ingredientsPlaceholder: "دجاج، أرز، بهارات، سلطة",
-          imageUrl: "رابط صورة اختياري",
+          imageUrl: "صورة اختيارية",
           mealQuestion: "سؤال خاص بهذه الوجبة",
           mealQuestionPlaceholder: "مثال: كيف تفضل البيض؟",
           mealQuestionType: "نوع الإجابة",
@@ -998,9 +998,9 @@
           mealName: "Meal name",
           mealCategory: "Meal type",
           mealNamePlaceholder: "Example: Chicken kabsa",
-          ingredients: "Ingredients",
+          ingredients: "Ingredients optional",
           ingredientsPlaceholder: "Chicken, rice, spices, salad",
-          imageUrl: "Optional image URL",
+          imageUrl: "Optional image upload",
           mealQuestion: "Custom question for this meal",
           mealQuestionPlaceholder: "Example: How do you want the eggs?",
           mealQuestionType: "Answer type",
@@ -1094,9 +1094,9 @@
           mealName: "Pangalan ng pagkain",
           mealCategory: "Uri ng pagkain",
           mealNamePlaceholder: "Halimbawa: Chicken kabsa",
-          ingredients: "Mga sangkap",
+          ingredients: "Mga sangkap optional",
           ingredientsPlaceholder: "Manok, kanin, pampalasa, salad",
-          imageUrl: "Opsyonal na image URL",
+          imageUrl: "Opsyonal na image upload",
           mealQuestion: "Espesyal na tanong para sa pagkain",
           mealQuestionPlaceholder: "Halimbawa: Paano mo gusto ang itlog?",
           mealQuestionType: "Uri ng sagot",
@@ -1369,7 +1369,6 @@
         setLabel("mealAddons", t("mealAddons"));
         refs.mealName.placeholder = t("mealNamePlaceholder");
         refs.mealIngredients.placeholder = t("ingredientsPlaceholder");
-        refs.mealImage.placeholder = "https://...";
         refs.mealQuestion.placeholder = t("mealQuestionPlaceholder");
         refs.mealQuestionOptions.placeholder = t("mealQuestionOptionsPlaceholder");
         refs.mealAddons.placeholder = t("mealAddonsPlaceholder");
@@ -1457,7 +1456,7 @@
             <div class="meal-photo" style="--photo: url('${escapeAttr(meal.image || "")}')"></div>
             <div class="meal-info">
               <h3>${escapeHtml(meal.name)}</h3>
-              <p class="ingredients">${escapeHtml(meal.ingredients)}</p>
+              ${meal.ingredients ? `<p class="ingredients">${escapeHtml(meal.ingredients)}</p>` : ""}
               <button type="button" data-choose-meal="${meal.id}">${t("chooseMeal")}</button>
             </div>
           </article>
@@ -1544,7 +1543,7 @@
           <div class="meal-info">
             <span class="badge">${t(meal.category || selectedCategory || "lunch")}</span>
             <h3>${escapeHtml(meal.name)}</h3>
-            <p class="ingredients">${escapeHtml(meal.ingredients)}</p>
+            ${meal.ingredients ? `<p class="ingredients">${escapeHtml(meal.ingredients)}</p>` : ""}
           </div>
         `;
         renderCustomQuestions(meal);
@@ -1673,6 +1672,17 @@
         return currentQuestion ? [...mealQuestionDrafts, currentQuestion] : mealQuestionDrafts;
       }
 
+      function readMealImage() {
+        const file = refs.mealImage.files && refs.mealImage.files[0];
+        if (!file) return Promise.resolve("");
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+      }
+
       function updateQuestionOptionsVisibility() {
         refs.mealQuestionOptionsWrap.classList.toggle("hidden", refs.mealQuestionType.value !== "select");
       }
@@ -1695,7 +1705,7 @@
                 <span class="badge">${t("place")} ${escapeHtml(order.placeName || "")}</span>
               </div>
               ${renderTimeDisplay(order)}
-              <p class="ingredients">${escapeHtml(order.ingredients)}</p>
+              ${order.ingredients ? `<p class="ingredients">${escapeHtml(order.ingredients)}</p>` : ""}
               ${renderOrderQuestionAnswers(order)}
               ${renderOrderAddons(order)}
               <p class="note">${escapeHtml(order.note || t("noNotes"))}</p>
@@ -2025,11 +2035,12 @@
 
       refs.mealForm.addEventListener("submit", async (event) => {
         event.preventDefault();
+        const image = await readMealImage();
         const meal = {
           category: refs.mealCategory.value,
           name: refs.mealName.value.trim(),
           ingredients: refs.mealIngredients.value.trim(),
-          image: refs.mealImage.value.trim(),
+          image,
           questions: buildMealQuestions(),
           addons: buildMealAddons()
         };

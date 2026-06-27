@@ -98,7 +98,7 @@ function readJson(req) {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk;
-      if (body.length > 1_000_000) {
+      if (body.length > 5_000_000) {
         req.destroy();
         reject(new Error("Body too large"));
       }
@@ -192,11 +192,11 @@ async function routeApi(req, res, url) {
       category: cleanCategory(body.category),
       name: cleanText(body.name, 80),
       ingredients: cleanText(body.ingredients, 800),
-      image: cleanText(body.image, 500),
+      image: cleanText(body.image, 1_000_000),
       questions: cleanQuestions(body.questions, body.question),
       addons: cleanAddons(body.addons)
     };
-    if (!meal.name || !meal.ingredients) return sendJson(res, 400, { error: "Meal name and ingredients are required" });
+    if (!meal.name) return sendJson(res, 400, { error: "Meal name is required" });
     state.meals.unshift(meal);
     saveState();
     broadcast();
