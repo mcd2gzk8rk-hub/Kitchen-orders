@@ -387,31 +387,6 @@
         margin-bottom: 10px;
       }
 
-      .status-bar {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
-        margin-bottom: 18px;
-      }
-
-      .stat {
-        min-height: 82px;
-        border-radius: 8px;
-        padding: 12px;
-        border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.72);
-      }
-
-      .stat strong {
-        display: block;
-        font-size: 28px;
-      }
-
-      .stat span {
-        color: var(--muted);
-        font-size: 13px;
-      }
-
       .kitchen-layout {
         display: none;
       }
@@ -583,9 +558,6 @@
           grid-template-columns: 1fr;
         }
 
-        .status-bar {
-          grid-template-columns: repeat(2, 1fr);
-        }
       }
 
       @media (max-width: 560px) {
@@ -608,8 +580,7 @@
           grid-template-columns: 1fr;
         }
 
-        .mode-switch,
-        .status-bar {
+        .mode-switch {
           grid-template-columns: 1fr;
         }
 
@@ -836,12 +807,6 @@
               <p class="note">الطلبات مرتبة حسب الوقت المطلوب.</p>
             </div>
             <div id="clock" class="clock"></div>
-          </div>
-          <div class="status-bar">
-            <div class="stat"><strong id="newCount">0</strong><span>طلبات جديدة</span></div>
-            <div class="stat"><strong id="cookingCount">0</strong><span>قيد التحضير</span></div>
-            <div class="stat"><strong id="readyCount">0</strong><span>جاهزة</span></div>
-            <div class="stat"><strong id="totalCount">0</strong><span>إجمالي مفتوح</span></div>
           </div>
           <div class="kitchen-board">
             <section class="kitchen-column">
@@ -1284,11 +1249,7 @@
         emptyOrders: document.getElementById("emptyOrders"),
         emptyPrep: document.getElementById("emptyPrep"),
         clock: document.getElementById("clock"),
-        prepCount: document.getElementById("prepCount"),
-        newCount: document.getElementById("newCount"),
-        cookingCount: document.getElementById("cookingCount"),
-        readyCount: document.getElementById("readyCount"),
-        totalCount: document.getElementById("totalCount")
+        prepCount: document.getElementById("prepCount")
       };
 
       function loadState() {
@@ -1439,10 +1400,6 @@
         document.querySelector("#placeForm button[type='submit']").textContent = t("savePlace");
         setText("#kitchenView .board-head h2", t("kitchenScreen"));
         setText("#kitchenView .board-head .note", t("sortedOrders"));
-        setText("#newCount + span", t("newOrders"));
-        setText("#cookingCount + span", t("cookingOrders"));
-        setText("#readyCount + span", t("readyOrders"));
-        setText("#totalCount + span", t("totalOpen"));
         refs.emptyOrders.textContent = t("emptyOrders");
         refs.emptyPrep.textContent = t("emptyPrep");
         setText("#prepColumnTitle", t("prepColumnTitle"));
@@ -1751,17 +1708,13 @@
               ${renderOrderAddons(order)}
               <p class="note">${escapeHtml(order.note || t("noNotes"))}</p>
               <div class="actions">
-                ${order.status === "ready" ? "" : `<button type="button" data-status="${order.id}" data-next="ready">${t("markReady")}</button>`}
+                <button type="button" data-status="${order.id}" data-next="done">${t("markReady")}</button>
               </div>
             </article>
           `;
         }).join("");
 
         refs.emptyOrders.classList.toggle("hidden", openOrders.length > 0);
-        refs.newCount.textContent = openOrders.filter((order) => order.status === "new").length;
-        refs.cookingCount.textContent = openOrders.filter((order) => order.status === "cooking").length;
-        refs.readyCount.textContent = openOrders.filter((order) => order.status === "ready").length;
-        refs.totalCount.textContent = openOrders.length;
       }
 
       function renderOrderQuestionAnswers(order) {
@@ -1826,7 +1779,7 @@
             ${renderTimeDisplay(request)}
             <p class="note">${escapeHtml(request.note || t("noNotes"))}</p>
             <div class="actions">
-              ${request.status === "ready" ? "" : `<button type="button" data-prep-status="${request.id}" data-next="ready">${t("markReady")}</button>`}
+              <button type="button" data-prep-status="${request.id}" data-next="done">${t("markReady")}</button>
             </div>
           </article>
         `).join("");
