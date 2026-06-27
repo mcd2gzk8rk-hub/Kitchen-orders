@@ -535,6 +535,28 @@
         margin: 0 0 14px;
       }
 
+      .time-display {
+        margin: 10px 0 12px;
+        padding: 12px;
+        border: 1px solid rgba(185, 28, 28, 0.22);
+        border-radius: 8px;
+        background: #fff1f2;
+        color: var(--danger);
+      }
+
+      .time-display strong {
+        display: block;
+        font-size: clamp(30px, 4vw, 52px);
+        line-height: 1;
+      }
+
+      .time-display span {
+        display: block;
+        margin-top: 8px;
+        font-weight: 700;
+        font-size: clamp(18px, 2vw, 28px);
+      }
+
       .empty {
         min-height: 260px;
         display: grid;
@@ -836,7 +858,7 @@
       let currentLanguage = localStorage.getItem(languageKey) || "ar";
       let selectedCategory = "";
       let selectedMealId = "";
-      let selectedTimeMode = "nextMorning";
+      let selectedTimeMode = "asap";
       let selectedPrepTimeMode = "asap";
       let mealQuestionDrafts = [];
 
@@ -904,7 +926,6 @@
           chooseOrderHelp: "حدد الوقت والكمية ثم أرسل الطلب لشاشة المطبخ.",
           searchMeal: "بحث عن وجبة",
           wantedTime: "وقت الأكل",
-          nextMorning: "صباح اليوم التالي، سأخذه للعمل",
           asap: "في أسرع وقت",
           specificTime: "اختيار وقت محدد",
           servicePlace: "المكان",
@@ -1001,7 +1022,6 @@
           chooseOrderHelp: "Select the time and quantity, then send the order to the kitchen screen.",
           searchMeal: "Search meals",
           wantedTime: "Eating time",
-          nextMorning: "Next day morning, will take it to work",
           asap: "ASAP",
           specificTime: "Choose a specific time",
           servicePlace: "Place",
@@ -1098,7 +1118,6 @@
           chooseOrderHelp: "Piliin ang oras at dami, tapos ipadala sa screen ng kusina.",
           searchMeal: "Maghanap ng pagkain",
           wantedTime: "Oras ng pagkain",
-          nextMorning: "Kinabukasan ng umaga, dadalhin sa trabaho",
           asap: "ASAP",
           specificTime: "Pumili ng tiyak na oras",
           servicePlace: "Lugar",
@@ -1459,7 +1478,6 @@
 
       function renderTimeOptions() {
         refs.timeChoiceGrid.innerHTML = [
-          ["nextMorning", t("nextMorning")],
           ["asap", t("asap")],
           ["specific", t("specificTime")]
         ].map(([mode, label]) => `
@@ -1473,7 +1491,6 @@
       function renderPrepTimeOptions() {
         refs.prepTimeChoiceGrid.innerHTML = [
           ["asap", t("asap")],
-          ["nextMorning", t("nextMorning")],
           ["specific", t("specificTime")]
         ].map(([mode, label]) => `
           <button class="choice-btn ${selectedPrepTimeMode === mode ? "active" : ""}" type="button" data-prep-time-mode="${mode}">
@@ -1675,9 +1692,9 @@
               </div>
               <div class="order-meta">
                 <span class="badge">${t(order.category || "lunch")}</span>
-                <span class="badge">${t("time")} ${escapeHtml(order.time)}</span>
                 <span class="badge">${t("place")} ${escapeHtml(order.placeName || "")}</span>
               </div>
+              ${renderTimeDisplay(order)}
               <p class="ingredients">${escapeHtml(order.ingredients)}</p>
               ${renderOrderQuestionAnswers(order)}
               ${renderOrderAddons(order)}
@@ -1714,6 +1731,32 @@
         return `<p class="note"><strong>${t("addons")}:</strong> ${addons.map((addon) => `${escapeHtml(addon.name)} x${addon.qty}`).join(", ")}</p>`;
       }
 
+      function renderTimeDisplay(item) {
+        if (!item.targetAt) return `<span class="badge">${t("time")} ${escapeHtml(item.time)}</span>`;
+        return `
+          <div class="time-display">
+            <strong>${escapeHtml(item.time)}</strong>
+            <span data-countdown="${escapeAttr(item.targetAt)}">${formatCountdown(item.targetAt)}</span>
+          </div>
+        `;
+      }
+
+      function formatCountdown(targetAt) {
+        const diff = new Date(targetAt).getTime() - Date.now();
+        const abs = Math.abs(diff);
+        const totalMinutes = Math.floor(abs / 60000);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        const prefix = diff < 0 ? "+" : "-";
+        return `${prefix}${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+      }
+
+      function updateCountdowns() {
+        document.querySelectorAll("[data-countdown]").forEach((element) => {
+          element.textContent = formatCountdown(element.dataset.countdown);
+        });
+      }
+
       function renderPrepRequests() {
         const openPrep = state.prepRequests
           .filter((request) => request.status !== "done")
@@ -1726,9 +1769,9 @@
               <span class="badge">${statusLabel(request.status)}</span>
             </div>
             <div class="order-meta">
-              <span class="badge">${t("time")} ${escapeHtml(request.time)}</span>
               <span class="badge">${t("place")} ${escapeHtml(request.placeName || "")}</span>
             </div>
+            ${renderTimeDisplay(request)}
             <p class="note">${escapeHtml(request.note || t("noNotes"))}</p>
             <div class="actions">
               ${request.status === "ready" ? "" : `<button type="button" data-prep-status="${request.id}" data-next="ready">${t("markReady")}</button>`}
@@ -1769,13 +1812,14 @@
           return;
         }
 
-        const time = getSelectedEatingTime();
+        const timeInfo = getSelectedEatingTime();
         const customResponses = getCustomQuestionAnswers(meal);
         const addons = getSelectedAddons();
 
         const order = {
           mealId,
-          time,
+          time: timeInfo.label,
+          targetAt: timeInfo.targetAt,
           note: refs.orderNote.value.trim(),
           placeId: place.id,
           placeName: place.name,
@@ -1795,7 +1839,8 @@
             mealName: meal.name,
             ingredients: meal.ingredients,
             category: meal.category || selectedCategory,
-            time,
+            time: timeInfo.label,
+            targetAt: timeInfo.targetAt,
             note: refs.orderNote.value.trim(),
             placeId: place.id,
             placeName: place.name,
@@ -1824,15 +1869,23 @@
       }
 
       function getSelectedEatingTime() {
-        if (selectedTimeMode === "nextMorning") return t("nextMorning");
-        if (selectedTimeMode === "asap") return t("asap");
-        return refs.wantedTime.value || currentTime();
+        if (selectedTimeMode === "asap") return { label: t("asap"), targetAt: "" };
+        const value = refs.wantedTime.value || currentTime();
+        return { label: value, targetAt: buildTargetDate(value) };
       }
 
       function getSelectedPrepTime() {
-        if (selectedPrepTimeMode === "nextMorning") return t("nextMorning");
-        if (selectedPrepTimeMode === "asap") return t("asap");
-        return refs.prepWantedTime.value || currentTime();
+        if (selectedPrepTimeMode === "asap") return { label: t("asap"), targetAt: "" };
+        const value = refs.prepWantedTime.value || currentTime();
+        return { label: value, targetAt: buildTargetDate(value) };
+      }
+
+      function buildTargetDate(timeValue) {
+        const [hours, minutes] = timeValue.split(":").map(Number);
+        const target = new Date();
+        target.setHours(hours || 0, minutes || 0, 0, 0);
+        if (target.getTime() < Date.now()) target.setDate(target.getDate() + 1);
+        return target.toISOString();
       }
 
       async function submitPrepRequest() {
@@ -1842,9 +1895,11 @@
           return;
         }
 
+        const timeInfo = getSelectedPrepTime();
         const request = {
           title: refs.prepTitle.value.trim(),
-          time: getSelectedPrepTime(),
+          time: timeInfo.label,
+          targetAt: timeInfo.targetAt,
           placeId: place.id,
           placeName: place.name,
           note: refs.prepNote.value.trim()
@@ -1886,6 +1941,7 @@
           minute: "2-digit",
           second: "2-digit"
         }).format(new Date());
+        updateCountdowns();
       }
 
       function escapeHtml(value) {
