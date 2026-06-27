@@ -14,28 +14,36 @@ const demoMeals = [
     category: "breakfast",
     name: "فطور عربي",
     ingredients: "بيض، فول، خبز، جبن، خضار",
-    image: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=700&q=70"
+    image: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=700&q=70",
+    questions: [],
+    addons: ["Bread", "Tea", "Water"]
   },
   {
     id: crypto.randomUUID(),
     category: "lunch",
     name: "كبسة دجاج",
     ingredients: "دجاج، أرز بسمتي، طماطم، بصل، بهارات كبسة",
-    image: "https://images.unsplash.com/photo-1599043513900-ed6fe01d3833?auto=format&fit=crop&w=700&q=70"
+    image: "https://images.unsplash.com/photo-1599043513900-ed6fe01d3833?auto=format&fit=crop&w=700&q=70",
+    questions: [],
+    addons: ["Coke", "Bread", "Extra sauce"]
   },
   {
     id: crypto.randomUUID(),
     category: "dinner",
     name: "مشويات مشكلة",
     ingredients: "كباب، شيش طاووق، خضار مشوية، خبز",
-    image: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=700&q=70"
+    image: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=700&q=70",
+    questions: [],
+    addons: ["Coke", "Bread", "Extra garlic"]
   },
   {
     id: crypto.randomUUID(),
     category: "snack",
     name: "سلطة فتوش",
     ingredients: "خس، خيار، طماطم، نعناع، خبز محمص، دبس رمان",
-    image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=70"
+    image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=70",
+    questions: [],
+    addons: ["Water", "Bread"]
   }
 ];
 
@@ -50,7 +58,14 @@ const clients = new Set();
 
 function normalizeState(nextState) {
   return {
-    meals: (nextState.meals || []).map((meal) => ({ category: "lunch", ...meal })),
+    meals: (nextState.meals || []).map((meal) => {
+      const questions = Array.isArray(meal.questions)
+        ? meal.questions
+        : meal.question
+          ? [meal.question]
+          : [];
+      return { category: "lunch", addons: [], ...meal, questions };
+    }),
     orders: nextState.orders || [],
     places: nextState.places && nextState.places.length ? nextState.places : demoPlaces
   };
@@ -124,6 +139,34 @@ function cleanQuestion(question) {
   };
 }
 
+function cleanQuestions(questions, legacyQuestion) {
+  const source = Array.isArray(questions) ? questions : legacyQuestion ? [legacyQuestion] : [];
+  return source.map(cleanQuestion).filter(Boolean).slice(0, 20);
+}
+
+function cleanAddons(addons) {
+  return Array.isArray(addons)
+    ? addons.map((addon) => cleanText(addon, 80)).filter(Boolean).slice(0, 30)
+    : [];
+}
+
+function cleanOrderResponses(responses, legacyResponse) {
+  const source = Array.isArray(responses) ? responses : legacyResponse ? [legacyResponse] : [];
+  return source.map((response) => ({
+    question: cleanText(response.question, 160),
+    answer: cleanText(response.answer, 300)
+  })).filter((response) => response.question).slice(0, 20);
+}
+
+function cleanOrderAddons(addons) {
+  return Array.isArray(addons)
+    ? addons.map((addon) => ({
+        name: cleanText(addon.name, 80),
+        qty: Math.max(0, Math.min(99, Number(addon.qty) || 0))
+      })).filter((addon) => addon.name && addon.qty > 0).slice(0, 30)
+    : [];
+}
+
 async function routeApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/state") {
     return sendJson(res, 200, state);
@@ -149,7 +192,8 @@ async function routeApi(req, res, url) {
       name: cleanText(body.name, 80),
       ingredients: cleanText(body.ingredients, 800),
       image: cleanText(body.image, 500),
-      question: cleanQuestion(body.question)
+      questions: cleanQuestions(body.questions, body.question),
+      addons: cleanAddons(body.addons)
     };
     if (!meal.name || !meal.ingredients) return sendJson(res, 400, { error: "Meal name and ingredients are required" });
     state.meals.unshift(meal);
@@ -200,21 +244,20 @@ async function routeApi(req, res, url) {
     if (!meal) return sendJson(res, 404, { error: "Meal not found" });
     const place = state.places.find((item) => item.id === body.placeId) || { id: "", name: cleanText(body.placeName, 80) };
     if (!place.name) return sendJson(res, 400, { error: "Place is required" });
-    const qty = Math.max(1, Math.min(99, Number(body.qty) || 1));
-    const customResponse = body.customResponse || {};
+    const customResponses = cleanOrderResponses(body.customResponses, body.customResponse);
+    const addons = cleanOrderAddons(body.addons);
     state.orders.push({
       id: crypto.randomUUID(),
       mealId: meal.id,
       mealName: meal.name,
       ingredients: meal.ingredients,
       category: meal.category || "lunch",
-      qty,
       time: cleanText(body.time, 20),
       note: cleanText(body.note, 300),
       placeId: place.id,
       placeName: place.name,
-      customQuestion: cleanText(customResponse.question, 160),
-      customAnswer: cleanText(customResponse.answer, 300),
+      customResponses,
+      addons,
       status: "new",
       createdAt: Date.now()
     });

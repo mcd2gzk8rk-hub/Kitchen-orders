@@ -5,28 +5,36 @@
       "category": "breakfast",
       "name": "فطور عربي",
       "ingredients": "بيض، فول، خبز، جبن، خضار",
-      "image": "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=700&q=70"
+      "image": "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=700&q=70",
+      "questions": [],
+      "addons": ["Bread", "Tea", "Water"]
     },
     {
       "id": "meal-kabsa",
       "category": "lunch",
       "name": "كبسة دجاج",
       "ingredients": "دجاج، أرز بسمتي، طماطم، بصل، بهارات كبسة",
-      "image": "https://images.unsplash.com/photo-1599043513900-ed6fe01d3833?auto=format&fit=crop&w=700&q=70"
+      "image": "https://images.unsplash.com/photo-1599043513900-ed6fe01d3833?auto=format&fit=crop&w=700&q=70",
+      "questions": [],
+      "addons": ["Coke", "Bread", "Extra sauce"]
     },
     {
       "id": "meal-grill",
       "category": "dinner",
       "name": "مشويات مشكلة",
       "ingredients": "كباب، شيش طاووق، خضار مشوية، خبز",
-      "image": "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=700&q=70"
+      "image": "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=700&q=70",
+      "questions": [],
+      "addons": ["Coke", "Bread", "Extra garlic"]
     },
     {
       "id": "meal-fattoush",
       "category": "snack",
       "name": "سلطة فتوش",
       "ingredients": "خس، خيار، طماطم، نعناع، خبز محمص، دبس رمان",
-      "image": "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=70"
+      "image": "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=70",
+      "questions": [],
+      "addons": ["Water", "Bread"]
     }
   ],
   "places": [

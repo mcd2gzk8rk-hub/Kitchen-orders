@@ -632,15 +632,12 @@
                     وقت الأكل
                     <input id="wantedTime" type="time" required />
                   </label>
-                  <label>
-                    الكمية
-                    <input id="defaultQty" type="number" min="1" max="99" value="1" />
-                  </label>
                   <label class="full">
                     المكان
                     <select id="servicePlace"></select>
                   </label>
                   <div id="customQuestionWrap" class="full hidden"></div>
+                  <div id="addonsWrap" class="full hidden"></div>
                   <label class="full">
                     ملاحظة للطلب
                     <input id="orderNote" placeholder="مثال: بدون فلفل، زيادة صوص" />
@@ -684,20 +681,30 @@
                   رابط صورة اختياري
                   <input id="mealImage" inputmode="url" placeholder="https://..." />
                 </label>
+                <div class="full">
+                  <label>
+                    سؤال خاص بهذه الوجبة
+                    <input id="mealQuestion" autocomplete="off" placeholder="مثال: كيف تفضل البيض؟" />
+                  </label>
+                  <label>
+                    نوع الإجابة
+                    <select id="mealQuestionType">
+                      <option value="text">كتابة جواب</option>
+                      <option value="select">قائمة منسدلة</option>
+                    </select>
+                  </label>
+                  <label id="mealQuestionOptionsWrap" class="hidden">
+                    خيارات القائمة
+                    <textarea id="mealQuestionOptions" placeholder="كل خيار في سطر&#10;قليل الملح&#10;عادي&#10;حار"></textarea>
+                  </label>
+                  <div class="actions">
+                    <button id="addMealQuestion" class="ghost" type="button">إضافة السؤال</button>
+                  </div>
+                  <div id="mealQuestionsList" class="meal-grid"></div>
+                </div>
                 <label>
-                  سؤال خاص بهذه الوجبة
-                  <input id="mealQuestion" autocomplete="off" placeholder="مثال: كيف تفضل البيض؟" />
-                </label>
-                <label>
-                  نوع الإجابة
-                  <select id="mealQuestionType">
-                    <option value="text">كتابة جواب</option>
-                    <option value="select">قائمة منسدلة</option>
-                  </select>
-                </label>
-                <label id="mealQuestionOptionsWrap" class="hidden">
-                  خيارات القائمة
-                  <textarea id="mealQuestionOptions" placeholder="كل خيار في سطر&#10;قليل الملح&#10;عادي&#10;حار"></textarea>
+                  الإضافات
+                  <textarea id="mealAddons" placeholder="كل إضافة في سطر&#10;Bread&#10;Coke"></textarea>
                 </label>
                 <div class="actions">
                   <button type="submit">حفظ الوجبة</button>
@@ -756,6 +763,7 @@
       let selectedCategory = "";
       let selectedMealId = "";
       let selectedTimeMode = "nextMorning";
+      let mealQuestionDrafts = [];
 
       const mealCategories = ["breakfast", "lunch", "dinner", "snack"];
 
@@ -795,6 +803,13 @@
           questionSelectAnswer: "قائمة منسدلة",
           mealQuestionOptions: "خيارات القائمة",
           mealQuestionOptionsPlaceholder: "كل خيار في سطر\nقليل الملح\nعادي\nحار",
+          addQuestion: "إضافة السؤال",
+          addedQuestions: "الأسئلة المضافة",
+          removeQuestion: "حذف السؤال",
+          mealAddons: "الإضافات",
+          mealAddonsPlaceholder: "كل إضافة في سطر\nBread\nCoke",
+          addons: "الإضافات",
+          noAddons: "بدون إضافات",
           customAnswer: "الإجابة",
           saveMeal: "حفظ الوجبة",
           resetMeals: "استرجاع أمثلة",
@@ -805,7 +820,6 @@
           nextMorning: "صباح اليوم التالي، سأخذه للعمل",
           asap: "في أسرع وقت",
           specificTime: "اختيار وقت محدد",
-          defaultQty: "الكمية",
           servicePlace: "المكان",
           orderNote: "ملاحظة للطلب",
           orderNotePlaceholder: "مثال: بدون فلفل، زيادة صوص",
@@ -819,7 +833,6 @@
           chooseMeal: "اختيار",
           sendKitchen: "إرسال للمطبخ",
           backToMeals: "رجوع للوجبات",
-          qtyAria: "كمية",
           deleteMeal: "حذف الوجبة",
           time: "الوقت",
           qty: "الكمية",
@@ -875,6 +888,13 @@
           questionSelectAnswer: "Dropdown list",
           mealQuestionOptions: "Dropdown options",
           mealQuestionOptionsPlaceholder: "One option per line\nLow salt\nRegular\nSpicy",
+          addQuestion: "Add question",
+          addedQuestions: "Added questions",
+          removeQuestion: "Remove question",
+          mealAddons: "Add-ons",
+          mealAddonsPlaceholder: "One add-on per line\nBread\nCoke",
+          addons: "Add-ons",
+          noAddons: "No add-ons",
           customAnswer: "Answer",
           saveMeal: "Save meal",
           resetMeals: "Restore examples",
@@ -885,7 +905,6 @@
           nextMorning: "Next day morning, will take it to work",
           asap: "ASAP",
           specificTime: "Choose a specific time",
-          defaultQty: "Quantity",
           servicePlace: "Place",
           orderNote: "Order note",
           orderNotePlaceholder: "Example: no pepper, extra sauce",
@@ -899,7 +918,6 @@
           chooseMeal: "Choose",
           sendKitchen: "Send to kitchen",
           backToMeals: "Back to meals",
-          qtyAria: "Quantity",
           deleteMeal: "Delete meal",
           time: "Time",
           qty: "Qty",
@@ -955,6 +973,13 @@
           questionSelectAnswer: "Dropdown list",
           mealQuestionOptions: "Mga pagpipilian",
           mealQuestionOptionsPlaceholder: "Isang option bawat linya\nKaunting asin\nRegular\nMaanghang",
+          addQuestion: "Idagdag ang tanong",
+          addedQuestions: "Mga tanong",
+          removeQuestion: "Burahin ang tanong",
+          mealAddons: "Mga add-on",
+          mealAddonsPlaceholder: "Isang add-on bawat linya\nBread\nCoke",
+          addons: "Mga add-on",
+          noAddons: "Walang add-on",
           customAnswer: "Sagot",
           saveMeal: "I-save ang pagkain",
           resetMeals: "Ibalik ang halimbawa",
@@ -965,7 +990,6 @@
           nextMorning: "Kinabukasan ng umaga, dadalhin sa trabaho",
           asap: "ASAP",
           specificTime: "Pumili ng tiyak na oras",
-          defaultQty: "Dami",
           servicePlace: "Lugar",
           orderNote: "Tala sa order",
           orderNotePlaceholder: "Halimbawa: walang sili, dagdag sauce",
@@ -979,7 +1003,6 @@
           chooseMeal: "Piliin",
           sendKitchen: "Ipadala sa kusina",
           backToMeals: "Bumalik sa pagkain",
-          qtyAria: "Dami",
           deleteMeal: "Burahin ang pagkain",
           time: "Oras",
           qty: "Dami",
@@ -1008,28 +1031,36 @@
           category: "breakfast",
           name: "فطور عربي",
           ingredients: "بيض، فول، خبز، جبن، خضار",
-          image: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=700&q=70"
+          image: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=700&q=70",
+          questions: [],
+          addons: ["Bread", "Tea", "Water"]
         },
         {
           id: crypto.randomUUID(),
           category: "lunch",
           name: "كبسة دجاج",
           ingredients: "دجاج، أرز بسمتي، طماطم، بصل، بهارات كبسة",
-          image: "https://images.unsplash.com/photo-1599043513900-ed6fe01d3833?auto=format&fit=crop&w=700&q=70"
+          image: "https://images.unsplash.com/photo-1599043513900-ed6fe01d3833?auto=format&fit=crop&w=700&q=70",
+          questions: [],
+          addons: ["Coke", "Bread", "Extra sauce"]
         },
         {
           id: crypto.randomUUID(),
           category: "dinner",
           name: "مشويات مشكلة",
           ingredients: "كباب، شيش طاووق، خضار مشوية، خبز",
-          image: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=700&q=70"
+          image: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=700&q=70",
+          questions: [],
+          addons: ["Coke", "Bread", "Extra garlic"]
         },
         {
           id: crypto.randomUUID(),
           category: "snack",
           name: "سلطة فتوش",
           ingredients: "خس، خيار، طماطم، نعناع، خبز محمص، دبس رمان",
-          image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=70"
+          image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=70",
+          questions: [],
+          addons: ["Water", "Bread"]
         }
       ];
 
@@ -1061,6 +1092,9 @@
         mealQuestionType: document.getElementById("mealQuestionType"),
         mealQuestionOptionsWrap: document.getElementById("mealQuestionOptionsWrap"),
         mealQuestionOptions: document.getElementById("mealQuestionOptions"),
+        addMealQuestion: document.getElementById("addMealQuestion"),
+        mealQuestionsList: document.getElementById("mealQuestionsList"),
+        mealAddons: document.getElementById("mealAddons"),
         placeForm: document.getElementById("placeForm"),
         placeName: document.getElementById("placeName"),
         placesList: document.getElementById("placesList"),
@@ -1070,9 +1104,9 @@
         timeChoiceGrid: document.getElementById("timeChoiceGrid"),
         specificTimeLabel: document.getElementById("specificTimeLabel"),
         wantedTime: document.getElementById("wantedTime"),
-        defaultQty: document.getElementById("defaultQty"),
         servicePlace: document.getElementById("servicePlace"),
         customQuestionWrap: document.getElementById("customQuestionWrap"),
+        addonsWrap: document.getElementById("addonsWrap"),
         orderNote: document.getElementById("orderNote"),
         sendOrder: document.getElementById("sendOrder"),
         backToMeals: document.getElementById("backToMeals"),
@@ -1098,7 +1132,14 @@
 
       function normalizeState(nextState) {
         return {
-          meals: (nextState.meals || []).map((meal) => ({ category: "lunch", ...meal })),
+          meals: (nextState.meals || []).map((meal) => {
+            const questions = Array.isArray(meal.questions)
+              ? meal.questions
+              : meal.question
+                ? [meal.question]
+                : [];
+            return { category: "lunch", addons: [], ...meal, questions };
+          }),
           orders: nextState.orders || [],
           places: nextState.places && nextState.places.length
             ? nextState.places
@@ -1179,11 +1220,13 @@
         setLabel("mealQuestion", t("mealQuestion"));
         setLabel("mealQuestionType", t("mealQuestionType"));
         setLabel("mealQuestionOptions", t("mealQuestionOptions"));
+        setLabel("mealAddons", t("mealAddons"));
         refs.mealName.placeholder = t("mealNamePlaceholder");
         refs.mealIngredients.placeholder = t("ingredientsPlaceholder");
         refs.mealImage.placeholder = "https://...";
         refs.mealQuestion.placeholder = t("mealQuestionPlaceholder");
         refs.mealQuestionOptions.placeholder = t("mealQuestionOptionsPlaceholder");
+        refs.mealAddons.placeholder = t("mealAddonsPlaceholder");
         const currentQuestionType = refs.mealQuestionType.value || "text";
         refs.mealQuestionType.innerHTML = `
           <option value="text">${t("questionTextAnswer")}</option>
@@ -1191,13 +1234,14 @@
         `;
         refs.mealQuestionType.value = currentQuestionType;
         updateQuestionOptionsVisibility();
+        refs.addMealQuestion.textContent = t("addQuestion");
+        renderMealQuestionDrafts();
         document.querySelector("#mealForm button[type='submit']").textContent = t("saveMeal");
         refs.resetMeals.textContent = t("resetMeals");
         refs.mealStepTitle.textContent = t("mealStepTitle");
         refs.searchMeal.placeholder = t("searchMeal");
         refs.timeChoiceLabel.textContent = t("wantedTime");
         setLabel("wantedTime", t("wantedTime"));
-        setLabel("defaultQty", t("defaultQty"));
         setLabel("servicePlace", t("servicePlace"));
         setLabel("orderNote", t("orderNote"));
         refs.orderNote.placeholder = t("orderNotePlaceholder");
@@ -1255,10 +1299,7 @@
             <div class="meal-info">
               <h3>${escapeHtml(meal.name)}</h3>
               <p class="ingredients">${escapeHtml(meal.ingredients)}</p>
-              <div class="order-row">
-                <button type="button" data-choose-meal="${meal.id}">${t("chooseMeal")}</button>
-                <input type="number" min="1" max="99" value="${Number(refs.defaultQty.value) || 1}" aria-label="${t("qtyAria")} ${escapeAttr(meal.name)}" data-qty="${meal.id}" />
-              </div>
+              <button type="button" data-choose-meal="${meal.id}">${t("chooseMeal")}</button>
             </div>
           </article>
         `).join("") : `<div class="empty">${t("noMeals")}</div>`;
@@ -1322,6 +1363,8 @@
           refs.selectedMealCard.innerHTML = "";
           refs.customQuestionWrap.classList.add("hidden");
           refs.customQuestionWrap.innerHTML = "";
+          refs.addonsWrap.classList.add("hidden");
+          refs.addonsWrap.innerHTML = "";
           return;
         }
         refs.selectedMealCard.innerHTML = `
@@ -1331,48 +1374,93 @@
             <p class="ingredients">${escapeHtml(meal.ingredients)}</p>
           </div>
         `;
-        renderCustomQuestion(meal);
+        renderCustomQuestions(meal);
+        renderAddons(meal);
       }
 
-      function renderCustomQuestion(meal) {
-        const question = meal.question;
-        if (!question || !question.text) {
+      function renderCustomQuestions(meal) {
+        const questions = getMealQuestions(meal);
+        if (!questions.length) {
           refs.customQuestionWrap.classList.add("hidden");
           refs.customQuestionWrap.innerHTML = "";
           return;
         }
 
         refs.customQuestionWrap.classList.remove("hidden");
-        if (question.type === "select" && Array.isArray(question.options) && question.options.length) {
-          refs.customQuestionWrap.innerHTML = `
+        refs.customQuestionWrap.innerHTML = questions.map((question, index) => {
+          if (question.type === "select" && Array.isArray(question.options) && question.options.length) {
+            return `
             <label>
               ${escapeHtml(question.text)}
-              <select id="customQuestionAnswer">
+              <select data-question-answer="${index}">
                 ${question.options.map((option) => `<option value="${escapeAttr(option)}">${escapeHtml(option)}</option>`).join("")}
               </select>
             </label>
           `;
+          }
+
+          return `
+          <label>
+            ${escapeHtml(question.text)}
+            <input data-question-answer="${index}" autocomplete="off" placeholder="${t("customAnswer")}" />
+          </label>
+        `;
+        }).join("");
+      }
+
+      function getMealQuestions(meal) {
+        if (Array.isArray(meal.questions)) return meal.questions.filter((question) => question && question.text);
+        if (meal.question && meal.question.text) return [meal.question];
+        return [];
+      }
+
+      function renderAddons(meal) {
+        const addons = Array.isArray(meal.addons) ? meal.addons.filter(Boolean) : [];
+        if (!addons.length) {
+          refs.addonsWrap.classList.add("hidden");
+          refs.addonsWrap.innerHTML = "";
           return;
         }
 
-        refs.customQuestionWrap.innerHTML = `
-          <label>
-            ${escapeHtml(question.text)}
-            <input id="customQuestionAnswer" autocomplete="off" placeholder="${t("customAnswer")}" />
-          </label>
+        refs.addonsWrap.classList.remove("hidden");
+        refs.addonsWrap.innerHTML = `
+          <label>${t("addons")}</label>
+          <div class="meal-grid">
+            ${addons.map((addon, index) => `
+              <article class="meal-card" style="grid-template-rows: 1fr;">
+                <div class="meal-info">
+                  <h3>${escapeHtml(addon)}</h3>
+                  <label>
+                    ${t("qty")}
+                    <input type="number" min="0" max="99" value="0" data-addon-qty="${index}" data-addon-name="${escapeAttr(addon)}" />
+                  </label>
+                </div>
+              </article>
+            `).join("")}
+          </div>
         `;
       }
 
-      function getCustomQuestionAnswer(meal) {
-        if (!meal.question || !meal.question.text) return null;
-        const answerInput = document.getElementById("customQuestionAnswer");
-        return {
-          question: meal.question.text,
-          answer: answerInput ? answerInput.value.trim() : ""
-        };
+      function getCustomQuestionAnswers(meal) {
+        return getMealQuestions(meal).map((question, index) => {
+          const answerInput = document.querySelector(`[data-question-answer="${index}"]`);
+          return {
+            question: question.text,
+            answer: answerInput ? answerInput.value.trim() : ""
+          };
+        });
       }
 
-      function buildMealQuestion() {
+      function getSelectedAddons() {
+        return Array.from(document.querySelectorAll("[data-addon-qty]"))
+          .map((input) => ({
+            name: input.dataset.addonName,
+            qty: Math.max(0, Math.min(99, Number(input.value) || 0))
+          }))
+          .filter((addon) => addon.name && addon.qty > 0);
+      }
+
+      function buildMealQuestionFromFields() {
         const text = refs.mealQuestion.value.trim();
         if (!text) return null;
         const type = refs.mealQuestionType.value === "select" ? "select" : "text";
@@ -1385,6 +1473,31 @@
           type,
           options: type === "select" ? options : []
         };
+      }
+
+      function renderMealQuestionDrafts() {
+        refs.mealQuestionsList.innerHTML = mealQuestionDrafts.length ? mealQuestionDrafts.map((question, index) => `
+          <article class="meal-card" style="grid-template-rows: 1fr;">
+            <div class="meal-info">
+              <span class="badge">${question.type === "select" ? t("questionSelectAnswer") : t("questionTextAnswer")}</span>
+              <h3>${escapeHtml(question.text)}</h3>
+              ${question.options?.length ? `<p class="ingredients">${question.options.map(escapeHtml).join(", ")}</p>` : ""}
+              <button class="danger" type="button" data-remove-question="${index}">${t("removeQuestion")}</button>
+            </div>
+          </article>
+        `).join("") : "";
+      }
+
+      function buildMealAddons() {
+        return refs.mealAddons.value
+          .split(/\r?\n/)
+          .map((addon) => addon.trim())
+          .filter(Boolean);
+      }
+
+      function buildMealQuestions() {
+        const currentQuestion = buildMealQuestionFromFields();
+        return currentQuestion ? [...mealQuestionDrafts, currentQuestion] : mealQuestionDrafts;
       }
 
       function updateQuestionOptionsVisibility() {
@@ -1407,11 +1520,11 @@
               <div class="order-meta">
                 <span class="badge">${t(order.category || "lunch")}</span>
                 <span class="badge">${t("time")} ${escapeHtml(order.time)}</span>
-                <span class="badge">${t("qty")} ${order.qty}</span>
                 <span class="badge">${t("place")} ${escapeHtml(order.placeName || "")}</span>
               </div>
               <p class="ingredients">${escapeHtml(order.ingredients)}</p>
-              ${order.customQuestion ? `<p class="note"><strong>${escapeHtml(order.customQuestion)}:</strong> ${escapeHtml(order.customAnswer || t("noNotes"))}</p>` : ""}
+              ${renderOrderQuestionAnswers(order)}
+              ${renderOrderAddons(order)}
               <p class="note">${escapeHtml(order.note || t("noNotes"))}</p>
               <div class="actions">
                 ${order.status === "ready" ? "" : `<button type="button" data-status="${order.id}" data-next="ready">${t("markReady")}</button>`}
@@ -1425,6 +1538,24 @@
         refs.cookingCount.textContent = openOrders.filter((order) => order.status === "cooking").length;
         refs.readyCount.textContent = openOrders.filter((order) => order.status === "ready").length;
         refs.totalCount.textContent = openOrders.length;
+      }
+
+      function renderOrderQuestionAnswers(order) {
+        const responses = Array.isArray(order.customResponses)
+          ? order.customResponses
+          : order.customQuestion
+            ? [{ question: order.customQuestion, answer: order.customAnswer }]
+            : [];
+        return responses
+          .filter((response) => response.question)
+          .map((response) => `<p class="note"><strong>${escapeHtml(response.question)}:</strong> ${escapeHtml(response.answer || t("noNotes"))}</p>`)
+          .join("");
+      }
+
+      function renderOrderAddons(order) {
+        const addons = Array.isArray(order.addons) ? order.addons.filter((addon) => addon && addon.qty > 0) : [];
+        if (!addons.length) return "";
+        return `<p class="note"><strong>${t("addons")}:</strong> ${addons.map((addon) => `${escapeHtml(addon.name)} x${addon.qty}`).join(", ")}</p>`;
       }
 
       function render() {
@@ -1454,19 +1585,18 @@
           return;
         }
 
-        const qtyInput = document.querySelector(`[data-qty="${CSS.escape(mealId)}"]`);
-        const qty = Math.max(1, Math.min(99, Number(qtyInput?.value) || Number(refs.defaultQty.value) || 1));
         const time = getSelectedEatingTime();
-        const customResponse = getCustomQuestionAnswer(meal);
+        const customResponses = getCustomQuestionAnswers(meal);
+        const addons = getSelectedAddons();
 
         const order = {
           mealId,
-          qty,
           time,
           note: refs.orderNote.value.trim(),
           placeId: place.id,
           placeName: place.name,
-          customResponse
+          customResponses,
+          addons
         };
 
         if (usingServer) {
@@ -1481,13 +1611,12 @@
             mealName: meal.name,
             ingredients: meal.ingredients,
             category: meal.category || selectedCategory,
-            qty,
             time,
             note: refs.orderNote.value.trim(),
             placeId: place.id,
             placeName: place.name,
-            customQuestion: customResponse?.question || "",
-            customAnswer: customResponse?.answer || "",
+            customResponses,
+            addons,
             status: "new",
             createdAt: Date.now()
           });
@@ -1552,8 +1681,23 @@
         applyLanguage();
       });
       refs.searchMeal.addEventListener("input", renderMeals);
-      refs.defaultQty.addEventListener("input", renderMeals);
       refs.mealQuestionType.addEventListener("change", updateQuestionOptionsVisibility);
+      refs.addMealQuestion.addEventListener("click", () => {
+        const question = buildMealQuestionFromFields();
+        if (!question) return;
+        mealQuestionDrafts.push(question);
+        refs.mealQuestion.value = "";
+        refs.mealQuestionOptions.value = "";
+        refs.mealQuestionType.value = "text";
+        updateQuestionOptionsVisibility();
+        renderMealQuestionDrafts();
+      });
+      refs.mealQuestionsList.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-remove-question]");
+        if (!button) return;
+        mealQuestionDrafts.splice(Number(button.dataset.removeQuestion), 1);
+        renderMealQuestionDrafts();
+      });
       refs.sendOrder.addEventListener("click", () => orderMeal());
       refs.backToMeals.addEventListener("click", () => {
         selectedMealId = "";
@@ -1585,7 +1729,8 @@
           name: refs.mealName.value.trim(),
           ingredients: refs.mealIngredients.value.trim(),
           image: refs.mealImage.value.trim(),
-          question: buildMealQuestion()
+          questions: buildMealQuestions(),
+          addons: buildMealAddons()
         };
 
         if (usingServer) {
@@ -1600,6 +1745,8 @@
         }
 
         refs.mealForm.reset();
+        mealQuestionDrafts = [];
+        renderMealQuestionDrafts();
         updateQuestionOptionsVisibility();
       });
 
