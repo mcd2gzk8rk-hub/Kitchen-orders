@@ -640,6 +640,7 @@
                     المكان
                     <select id="servicePlace"></select>
                   </label>
+                  <div id="customQuestionWrap" class="full hidden"></div>
                   <label class="full">
                     ملاحظة للطلب
                     <input id="orderNote" placeholder="مثال: بدون فلفل، زيادة صوص" />
@@ -682,6 +683,21 @@
                 <label>
                   رابط صورة اختياري
                   <input id="mealImage" inputmode="url" placeholder="https://..." />
+                </label>
+                <label>
+                  سؤال خاص بهذه الوجبة
+                  <input id="mealQuestion" autocomplete="off" placeholder="مثال: كيف تفضل البيض؟" />
+                </label>
+                <label>
+                  نوع الإجابة
+                  <select id="mealQuestionType">
+                    <option value="text">كتابة جواب</option>
+                    <option value="select">قائمة منسدلة</option>
+                  </select>
+                </label>
+                <label id="mealQuestionOptionsWrap" class="hidden">
+                  خيارات القائمة
+                  <textarea id="mealQuestionOptions" placeholder="كل خيار في سطر&#10;قليل الملح&#10;عادي&#10;حار"></textarea>
                 </label>
                 <div class="actions">
                   <button type="submit">حفظ الوجبة</button>
@@ -772,6 +788,14 @@
           ingredients: "المكونات",
           ingredientsPlaceholder: "دجاج، أرز، بهارات، سلطة",
           imageUrl: "رابط صورة اختياري",
+          mealQuestion: "سؤال خاص بهذه الوجبة",
+          mealQuestionPlaceholder: "مثال: كيف تفضل البيض؟",
+          mealQuestionType: "نوع الإجابة",
+          questionTextAnswer: "كتابة جواب",
+          questionSelectAnswer: "قائمة منسدلة",
+          mealQuestionOptions: "خيارات القائمة",
+          mealQuestionOptionsPlaceholder: "كل خيار في سطر\nقليل الملح\nعادي\nحار",
+          customAnswer: "الإجابة",
           saveMeal: "حفظ الوجبة",
           resetMeals: "استرجاع أمثلة",
           chooseOrder: "اختيار الطلب",
@@ -844,6 +868,14 @@
           ingredients: "Ingredients",
           ingredientsPlaceholder: "Chicken, rice, spices, salad",
           imageUrl: "Optional image URL",
+          mealQuestion: "Custom question for this meal",
+          mealQuestionPlaceholder: "Example: How do you want the eggs?",
+          mealQuestionType: "Answer type",
+          questionTextAnswer: "Typed answer",
+          questionSelectAnswer: "Dropdown list",
+          mealQuestionOptions: "Dropdown options",
+          mealQuestionOptionsPlaceholder: "One option per line\nLow salt\nRegular\nSpicy",
+          customAnswer: "Answer",
           saveMeal: "Save meal",
           resetMeals: "Restore examples",
           chooseOrder: "Choose Order",
@@ -916,6 +948,14 @@
           ingredients: "Mga sangkap",
           ingredientsPlaceholder: "Manok, kanin, pampalasa, salad",
           imageUrl: "Opsyonal na image URL",
+          mealQuestion: "Espesyal na tanong para sa pagkain",
+          mealQuestionPlaceholder: "Halimbawa: Paano mo gusto ang itlog?",
+          mealQuestionType: "Uri ng sagot",
+          questionTextAnswer: "Isusulat na sagot",
+          questionSelectAnswer: "Dropdown list",
+          mealQuestionOptions: "Mga pagpipilian",
+          mealQuestionOptionsPlaceholder: "Isang option bawat linya\nKaunting asin\nRegular\nMaanghang",
+          customAnswer: "Sagot",
           saveMeal: "I-save ang pagkain",
           resetMeals: "Ibalik ang halimbawa",
           chooseOrder: "Pumili ng Order",
@@ -1017,6 +1057,10 @@
         mealName: document.getElementById("mealName"),
         mealIngredients: document.getElementById("mealIngredients"),
         mealImage: document.getElementById("mealImage"),
+        mealQuestion: document.getElementById("mealQuestion"),
+        mealQuestionType: document.getElementById("mealQuestionType"),
+        mealQuestionOptionsWrap: document.getElementById("mealQuestionOptionsWrap"),
+        mealQuestionOptions: document.getElementById("mealQuestionOptions"),
         placeForm: document.getElementById("placeForm"),
         placeName: document.getElementById("placeName"),
         placesList: document.getElementById("placesList"),
@@ -1028,6 +1072,7 @@
         wantedTime: document.getElementById("wantedTime"),
         defaultQty: document.getElementById("defaultQty"),
         servicePlace: document.getElementById("servicePlace"),
+        customQuestionWrap: document.getElementById("customQuestionWrap"),
         orderNote: document.getElementById("orderNote"),
         sendOrder: document.getElementById("sendOrder"),
         backToMeals: document.getElementById("backToMeals"),
@@ -1131,9 +1176,21 @@
         setLabel("mealName", t("mealName"));
         setLabel("mealIngredients", t("ingredients"));
         setLabel("mealImage", t("imageUrl"));
+        setLabel("mealQuestion", t("mealQuestion"));
+        setLabel("mealQuestionType", t("mealQuestionType"));
+        setLabel("mealQuestionOptions", t("mealQuestionOptions"));
         refs.mealName.placeholder = t("mealNamePlaceholder");
         refs.mealIngredients.placeholder = t("ingredientsPlaceholder");
         refs.mealImage.placeholder = "https://...";
+        refs.mealQuestion.placeholder = t("mealQuestionPlaceholder");
+        refs.mealQuestionOptions.placeholder = t("mealQuestionOptionsPlaceholder");
+        const currentQuestionType = refs.mealQuestionType.value || "text";
+        refs.mealQuestionType.innerHTML = `
+          <option value="text">${t("questionTextAnswer")}</option>
+          <option value="select">${t("questionSelectAnswer")}</option>
+        `;
+        refs.mealQuestionType.value = currentQuestionType;
+        updateQuestionOptionsVisibility();
         document.querySelector("#mealForm button[type='submit']").textContent = t("saveMeal");
         refs.resetMeals.textContent = t("resetMeals");
         refs.mealStepTitle.textContent = t("mealStepTitle");
@@ -1263,6 +1320,8 @@
         const meal = state.meals.find((item) => item.id === selectedMealId);
         if (!meal) {
           refs.selectedMealCard.innerHTML = "";
+          refs.customQuestionWrap.classList.add("hidden");
+          refs.customQuestionWrap.innerHTML = "";
           return;
         }
         refs.selectedMealCard.innerHTML = `
@@ -1272,6 +1331,64 @@
             <p class="ingredients">${escapeHtml(meal.ingredients)}</p>
           </div>
         `;
+        renderCustomQuestion(meal);
+      }
+
+      function renderCustomQuestion(meal) {
+        const question = meal.question;
+        if (!question || !question.text) {
+          refs.customQuestionWrap.classList.add("hidden");
+          refs.customQuestionWrap.innerHTML = "";
+          return;
+        }
+
+        refs.customQuestionWrap.classList.remove("hidden");
+        if (question.type === "select" && Array.isArray(question.options) && question.options.length) {
+          refs.customQuestionWrap.innerHTML = `
+            <label>
+              ${escapeHtml(question.text)}
+              <select id="customQuestionAnswer">
+                ${question.options.map((option) => `<option value="${escapeAttr(option)}">${escapeHtml(option)}</option>`).join("")}
+              </select>
+            </label>
+          `;
+          return;
+        }
+
+        refs.customQuestionWrap.innerHTML = `
+          <label>
+            ${escapeHtml(question.text)}
+            <input id="customQuestionAnswer" autocomplete="off" placeholder="${t("customAnswer")}" />
+          </label>
+        `;
+      }
+
+      function getCustomQuestionAnswer(meal) {
+        if (!meal.question || !meal.question.text) return null;
+        const answerInput = document.getElementById("customQuestionAnswer");
+        return {
+          question: meal.question.text,
+          answer: answerInput ? answerInput.value.trim() : ""
+        };
+      }
+
+      function buildMealQuestion() {
+        const text = refs.mealQuestion.value.trim();
+        if (!text) return null;
+        const type = refs.mealQuestionType.value === "select" ? "select" : "text";
+        const options = refs.mealQuestionOptions.value
+          .split(/\r?\n/)
+          .map((option) => option.trim())
+          .filter(Boolean);
+        return {
+          text,
+          type,
+          options: type === "select" ? options : []
+        };
+      }
+
+      function updateQuestionOptionsVisibility() {
+        refs.mealQuestionOptionsWrap.classList.toggle("hidden", refs.mealQuestionType.value !== "select");
       }
 
       function renderOrders() {
@@ -1294,6 +1411,7 @@
                 <span class="badge">${t("place")} ${escapeHtml(order.placeName || "")}</span>
               </div>
               <p class="ingredients">${escapeHtml(order.ingredients)}</p>
+              ${order.customQuestion ? `<p class="note"><strong>${escapeHtml(order.customQuestion)}:</strong> ${escapeHtml(order.customAnswer || t("noNotes"))}</p>` : ""}
               <p class="note">${escapeHtml(order.note || t("noNotes"))}</p>
               <div class="actions">
                 ${order.status === "ready" ? "" : `<button type="button" data-status="${order.id}" data-next="ready">${t("markReady")}</button>`}
@@ -1339,6 +1457,7 @@
         const qtyInput = document.querySelector(`[data-qty="${CSS.escape(mealId)}"]`);
         const qty = Math.max(1, Math.min(99, Number(qtyInput?.value) || Number(refs.defaultQty.value) || 1));
         const time = getSelectedEatingTime();
+        const customResponse = getCustomQuestionAnswer(meal);
 
         const order = {
           mealId,
@@ -1346,7 +1465,8 @@
           time,
           note: refs.orderNote.value.trim(),
           placeId: place.id,
-          placeName: place.name
+          placeName: place.name,
+          customResponse
         };
 
         if (usingServer) {
@@ -1366,6 +1486,8 @@
             note: refs.orderNote.value.trim(),
             placeId: place.id,
             placeName: place.name,
+            customQuestion: customResponse?.question || "",
+            customAnswer: customResponse?.answer || "",
             status: "new",
             createdAt: Date.now()
           });
@@ -1431,6 +1553,7 @@
       });
       refs.searchMeal.addEventListener("input", renderMeals);
       refs.defaultQty.addEventListener("input", renderMeals);
+      refs.mealQuestionType.addEventListener("change", updateQuestionOptionsVisibility);
       refs.sendOrder.addEventListener("click", () => orderMeal());
       refs.backToMeals.addEventListener("click", () => {
         selectedMealId = "";
@@ -1461,7 +1584,8 @@
           category: refs.mealCategory.value,
           name: refs.mealName.value.trim(),
           ingredients: refs.mealIngredients.value.trim(),
-          image: refs.mealImage.value.trim()
+          image: refs.mealImage.value.trim(),
+          question: buildMealQuestion()
         };
 
         if (usingServer) {
@@ -1476,6 +1600,7 @@
         }
 
         refs.mealForm.reset();
+        updateQuestionOptionsVisibility();
       });
 
       refs.placeForm.addEventListener("submit", async (event) => {

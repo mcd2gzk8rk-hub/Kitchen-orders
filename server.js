@@ -111,6 +111,19 @@ function cleanCategory(value) {
   return ["breakfast", "lunch", "dinner", "snack"].includes(value) ? value : "lunch";
 }
 
+function cleanQuestion(question) {
+  if (!question || !question.text) return null;
+  const type = question.type === "select" ? "select" : "text";
+  const options = Array.isArray(question.options)
+    ? question.options.map((option) => cleanText(option, 80)).filter(Boolean).slice(0, 20)
+    : [];
+  return {
+    text: cleanText(question.text, 160),
+    type,
+    options: type === "select" ? options : []
+  };
+}
+
 async function routeApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/state") {
     return sendJson(res, 200, state);
@@ -135,7 +148,8 @@ async function routeApi(req, res, url) {
       category: cleanCategory(body.category),
       name: cleanText(body.name, 80),
       ingredients: cleanText(body.ingredients, 800),
-      image: cleanText(body.image, 500)
+      image: cleanText(body.image, 500),
+      question: cleanQuestion(body.question)
     };
     if (!meal.name || !meal.ingredients) return sendJson(res, 400, { error: "Meal name and ingredients are required" });
     state.meals.unshift(meal);
@@ -187,6 +201,7 @@ async function routeApi(req, res, url) {
     const place = state.places.find((item) => item.id === body.placeId) || { id: "", name: cleanText(body.placeName, 80) };
     if (!place.name) return sendJson(res, 400, { error: "Place is required" });
     const qty = Math.max(1, Math.min(99, Number(body.qty) || 1));
+    const customResponse = body.customResponse || {};
     state.orders.push({
       id: crypto.randomUUID(),
       mealId: meal.id,
@@ -198,6 +213,8 @@ async function routeApi(req, res, url) {
       note: cleanText(body.note, 300),
       placeId: place.id,
       placeName: place.name,
+      customQuestion: cleanText(customResponse.question, 160),
+      customAnswer: cleanText(customResponse.answer, 300),
       status: "new",
       createdAt: Date.now()
     });
