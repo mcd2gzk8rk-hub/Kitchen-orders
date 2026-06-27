@@ -37,6 +37,7 @@
       "addons": ["Water", "Bread"]
     }
   ],
+  "prepRequests": [],
   "places": [
     {
       "id": "place-majlis",

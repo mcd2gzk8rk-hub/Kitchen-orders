@@ -431,6 +431,30 @@
         grid-template-columns: 1fr;
       }
 
+      .kitchen-board {
+        display: grid;
+        grid-template-columns: minmax(260px, 0.3fr) minmax(420px, 0.7fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      .kitchen-column {
+        display: grid;
+        gap: 14px;
+      }
+
+      .column-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .column-head h3 {
+        margin: 0;
+        font-size: clamp(20px, 2.4vw, 32px);
+      }
+
       .board-head {
         display: flex;
         align-items: end;
@@ -571,6 +595,10 @@
           align-items: start;
           flex-direction: column;
         }
+
+        .kitchen-board {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -613,6 +641,9 @@
             <div class="panel-body step-panel">
               <div id="categoryStep">
                 <div id="categoryGrid" class="choice-grid"></div>
+                <div class="actions" style="margin-top: 14px;">
+                  <button id="prepRequestMode" class="ghost" type="button">طلب تجهيز للطبخ</button>
+                </div>
               </div>
               <div id="mealStep" class="hidden">
                 <div class="catalog-tools">
@@ -646,6 +677,34 @@
                 <div class="actions">
                   <button id="sendOrder" type="button">إرسال للمطبخ</button>
                   <button id="backToMeals" class="ghost" type="button">رجوع للوجبات</button>
+                </div>
+              </div>
+              <div id="prepStep" class="hidden">
+                <div class="form-grid">
+                  <label class="full">
+                    طلب التجهيز
+                    <input id="prepTitle" autocomplete="off" placeholder="مثال: اخراج الدجاجة من الفريزر" />
+                  </label>
+                  <div class="full">
+                    <label id="prepTimeChoiceLabel">وقت التجهيز</label>
+                    <div id="prepTimeChoiceGrid" class="choice-grid"></div>
+                  </div>
+                  <label id="prepSpecificTimeLabel" class="hidden">
+                    وقت التجهيز
+                    <input id="prepWantedTime" type="time" />
+                  </label>
+                  <label class="full">
+                    المكان
+                    <select id="prepServicePlace"></select>
+                  </label>
+                  <label class="full">
+                    ملاحظة
+                    <input id="prepNote" autocomplete="off" placeholder="تفاصيل إضافية" />
+                  </label>
+                </div>
+                <div class="actions">
+                  <button id="sendPrepRequest" type="button">إرسال للمطبخ</button>
+                  <button id="backFromPrep" class="ghost" type="button">رجوع</button>
                 </div>
               </div>
             </div>
@@ -748,8 +807,23 @@
             <div class="stat"><strong id="readyCount">0</strong><span>جاهزة</span></div>
             <div class="stat"><strong id="totalCount">0</strong><span>إجمالي مفتوح</span></div>
           </div>
-          <div id="ordersGrid" class="orders-grid"></div>
-          <div id="emptyOrders" class="empty hidden">لا توجد طلبات مفتوحة حالياً</div>
+          <div class="kitchen-board">
+            <section class="kitchen-column">
+              <div class="column-head">
+                <h3 id="prepColumnTitle">التجهيزات المطلوبة</h3>
+                <span class="badge" id="prepCount">0</span>
+              </div>
+              <div id="prepGrid" class="orders-grid"></div>
+              <div id="emptyPrep" class="empty hidden">لا توجد تجهيزات مطلوبة حالياً</div>
+            </section>
+            <section class="kitchen-column">
+              <div class="column-head">
+                <h3 id="mealColumnTitle">طلبات الوجبات</h3>
+              </div>
+              <div id="ordersGrid" class="orders-grid"></div>
+              <div id="emptyOrders" class="empty hidden">لا توجد طلبات مفتوحة حالياً</div>
+            </section>
+          </div>
         </section>
       </main>
     </div>
@@ -763,6 +837,7 @@
       let selectedCategory = "";
       let selectedMealId = "";
       let selectedTimeMode = "nextMorning";
+      let selectedPrepTimeMode = "asap";
       let mealQuestionDrafts = [];
 
       const mealCategories = ["breakfast", "lunch", "dinner", "snack"];
@@ -778,6 +853,18 @@
           kitchenMode: "المطبخ",
           orderStepTitle: "اختيار نوع الطلب",
           orderStepHelp: "اختر فطور أو غداء أو عشاء أو سناك، ثم اختر الوجبة والوقت والمكان.",
+          prepRequest: "طلب تجهيز للطبخ",
+          prepStepTitle: "طلب تجهيز للطبخ",
+          prepStepHelp: "اكتب طلب التجهيز والوقت والمكان ليظهر في شاشة المطبخ.",
+          prepTitle: "طلب التجهيز",
+          prepTitlePlaceholder: "مثال: اخراج الدجاجة من الفريزر",
+          prepTime: "وقت التجهيز",
+          prepNote: "ملاحظة",
+          prepNotePlaceholder: "تفاصيل إضافية",
+          back: "رجوع",
+          prepColumnTitle: "التجهيزات المطلوبة",
+          mealColumnTitle: "طلبات الوجبات",
+          emptyPrep: "لا توجد تجهيزات مطلوبة حالياً",
           mealStepTitle: "اختيار الوجبة",
           detailsStepTitle: "تفاصيل الطلب",
           detailsStepHelp: "حدد وقت الطلب والمكان المطلوب ثم أرسله للمطبخ.",
@@ -863,6 +950,18 @@
           kitchenMode: "Kitchen",
           orderStepTitle: "Choose Order Type",
           orderStepHelp: "Choose breakfast, lunch, dinner, or snack, then select the meal, time, and place.",
+          prepRequest: "Cooking prep request",
+          prepStepTitle: "Cooking Prep Request",
+          prepStepHelp: "Write the prep request, time, and place so it appears on the kitchen screen.",
+          prepTitle: "Prep request",
+          prepTitlePlaceholder: "Example: take the chicken out of the freezer",
+          prepTime: "Prep time",
+          prepNote: "Note",
+          prepNotePlaceholder: "Extra details",
+          back: "Back",
+          prepColumnTitle: "Prep requests",
+          mealColumnTitle: "Meal orders",
+          emptyPrep: "No prep requests right now",
           mealStepTitle: "Choose Meal",
           detailsStepTitle: "Order Details",
           detailsStepHelp: "Select the requested time and place, then send it to the kitchen.",
@@ -948,6 +1047,18 @@
           kitchenMode: "Kusina",
           orderStepTitle: "Piliin ang Uri ng Order",
           orderStepHelp: "Pumili ng almusal, tanghalian, hapunan, o meryenda, tapos piliin ang pagkain, oras, at lugar.",
+          prepRequest: "Cooking prep request",
+          prepStepTitle: "Cooking Prep Request",
+          prepStepHelp: "Ilagay ang prep request, oras, at lugar para makita sa kitchen screen.",
+          prepTitle: "Prep request",
+          prepTitlePlaceholder: "Halimbawa: ilabas ang manok sa freezer",
+          prepTime: "Oras ng prep",
+          prepNote: "Tala",
+          prepNotePlaceholder: "Karagdagang detalye",
+          back: "Bumalik",
+          prepColumnTitle: "Prep requests",
+          mealColumnTitle: "Meal orders",
+          emptyPrep: "Walang prep request ngayon",
           mealStepTitle: "Pumili ng Pagkain",
           detailsStepTitle: "Detalye ng Order",
           detailsStepHelp: "Piliin ang oras at lugar, tapos ipadala sa kusina.",
@@ -1079,6 +1190,7 @@
         categoryStep: document.getElementById("categoryStep"),
         mealStep: document.getElementById("mealStep"),
         detailsStep: document.getElementById("detailsStep"),
+        prepStep: document.getElementById("prepStep"),
         selectedMealCard: document.getElementById("selectedMealCard"),
         orderStepTitle: document.getElementById("orderStepTitle"),
         orderStepHelp: document.getElementById("orderStepHelp"),
@@ -1100,6 +1212,7 @@
         placesList: document.getElementById("placesList"),
         resetMeals: document.getElementById("resetMeals"),
         searchMeal: document.getElementById("searchMeal"),
+        prepRequestMode: document.getElementById("prepRequestMode"),
         timeChoiceLabel: document.getElementById("timeChoiceLabel"),
         timeChoiceGrid: document.getElementById("timeChoiceGrid"),
         specificTimeLabel: document.getElementById("specificTimeLabel"),
@@ -1110,10 +1223,22 @@
         orderNote: document.getElementById("orderNote"),
         sendOrder: document.getElementById("sendOrder"),
         backToMeals: document.getElementById("backToMeals"),
+        prepTitle: document.getElementById("prepTitle"),
+        prepTimeChoiceLabel: document.getElementById("prepTimeChoiceLabel"),
+        prepTimeChoiceGrid: document.getElementById("prepTimeChoiceGrid"),
+        prepSpecificTimeLabel: document.getElementById("prepSpecificTimeLabel"),
+        prepWantedTime: document.getElementById("prepWantedTime"),
+        prepServicePlace: document.getElementById("prepServicePlace"),
+        prepNote: document.getElementById("prepNote"),
+        sendPrepRequest: document.getElementById("sendPrepRequest"),
+        backFromPrep: document.getElementById("backFromPrep"),
         mealGrid: document.getElementById("mealGrid"),
         ordersGrid: document.getElementById("ordersGrid"),
+        prepGrid: document.getElementById("prepGrid"),
         emptyOrders: document.getElementById("emptyOrders"),
+        emptyPrep: document.getElementById("emptyPrep"),
         clock: document.getElementById("clock"),
+        prepCount: document.getElementById("prepCount"),
         newCount: document.getElementById("newCount"),
         cookingCount: document.getElementById("cookingCount"),
         readyCount: document.getElementById("readyCount"),
@@ -1127,7 +1252,7 @@
             return normalizeState(saved);
           }
         } catch (error) {}
-        return normalizeState({ meals: demoMeals, orders: [] });
+        return normalizeState({ meals: demoMeals, orders: [], prepRequests: [] });
       }
 
       function normalizeState(nextState) {
@@ -1141,6 +1266,7 @@
             return { category: "lunch", addons: [], ...meal, questions };
           }),
           orders: nextState.orders || [],
+          prepRequests: nextState.prepRequests || [],
           places: nextState.places && nextState.places.length
             ? nextState.places
             : [
@@ -1206,6 +1332,7 @@
         refs.phoneMode.textContent = t("phoneMode");
         refs.manageMode.textContent = t("manageMode");
         refs.kitchenMode.textContent = t("kitchenMode");
+        refs.prepRequestMode.textContent = t("prepRequest");
         refs.orderStepTitle.textContent = selectedMealId ? t("detailsStepTitle") : selectedCategory ? t("mealStepTitle") : t("orderStepTitle");
         refs.orderStepHelp.textContent = selectedMealId ? t("detailsStepHelp") : t("orderStepHelp");
         setText("#manageView aside .panel-head h2", t("addMeal"));
@@ -1247,6 +1374,15 @@
         refs.orderNote.placeholder = t("orderNotePlaceholder");
         refs.sendOrder.textContent = t("sendKitchen");
         refs.backToMeals.textContent = t("backToMeals");
+        setLabel("prepTitle", t("prepTitle"));
+        refs.prepTitle.placeholder = t("prepTitlePlaceholder");
+        refs.prepTimeChoiceLabel.textContent = t("prepTime");
+        setLabel("prepWantedTime", t("prepTime"));
+        setLabel("prepServicePlace", t("servicePlace"));
+        setLabel("prepNote", t("prepNote"));
+        refs.prepNote.placeholder = t("prepNotePlaceholder");
+        refs.sendPrepRequest.textContent = t("sendKitchen");
+        refs.backFromPrep.textContent = t("back");
         setText("#placesTitle", t("placesTitle"));
         setText("#placesHelp", t("placesHelp"));
         setLabel("placeName", t("placeName"));
@@ -1259,8 +1395,12 @@
         setText("#readyCount + span", t("readyOrders"));
         setText("#totalCount + span", t("totalOpen"));
         refs.emptyOrders.textContent = t("emptyOrders");
+        refs.emptyPrep.textContent = t("emptyPrep");
+        setText("#prepColumnTitle", t("prepColumnTitle"));
+        setText("#mealColumnTitle", t("mealColumnTitle"));
         renderCategoryOptions();
         renderTimeOptions();
+        renderPrepTimeOptions();
         renderPlaces();
         setMode(getModeFromHash());
         render();
@@ -1330,12 +1470,27 @@
         refs.specificTimeLabel.classList.toggle("hidden", selectedTimeMode !== "specific");
       }
 
+      function renderPrepTimeOptions() {
+        refs.prepTimeChoiceGrid.innerHTML = [
+          ["asap", t("asap")],
+          ["nextMorning", t("nextMorning")],
+          ["specific", t("specificTime")]
+        ].map(([mode, label]) => `
+          <button class="choice-btn ${selectedPrepTimeMode === mode ? "active" : ""}" type="button" data-prep-time-mode="${mode}">
+            ${label}
+          </button>
+        `).join("");
+        refs.prepSpecificTimeLabel.classList.toggle("hidden", selectedPrepTimeMode !== "specific");
+      }
+
       function renderPlaces() {
         refs.servicePlace.innerHTML = state.places.map((place) => `
           <option value="${escapeAttr(place.id)}">${escapeHtml(place.name)}</option>
         `).join("");
+        refs.prepServicePlace.innerHTML = refs.servicePlace.innerHTML;
         if (!state.places.length) {
           refs.servicePlace.innerHTML = `<option value="">${t("noPlaces")}</option>`;
+          refs.prepServicePlace.innerHTML = `<option value="">${t("noPlaces")}</option>`;
         }
 
         refs.placesList.innerHTML = state.places.length ? state.places.map((place) => `
@@ -1352,8 +1507,9 @@
         refs.categoryStep.classList.toggle("hidden", step !== "category");
         refs.mealStep.classList.toggle("hidden", step !== "meal");
         refs.detailsStep.classList.toggle("hidden", step !== "details");
-        refs.orderStepTitle.textContent = step === "details" ? t("detailsStepTitle") : step === "meal" ? t("mealStepTitle") : t("orderStepTitle");
-        refs.orderStepHelp.textContent = step === "details" ? t("detailsStepHelp") : t("orderStepHelp");
+        refs.prepStep.classList.toggle("hidden", step !== "prep");
+        refs.orderStepTitle.textContent = step === "prep" ? t("prepStepTitle") : step === "details" ? t("detailsStepTitle") : step === "meal" ? t("mealStepTitle") : t("orderStepTitle");
+        refs.orderStepHelp.textContent = step === "prep" ? t("prepStepHelp") : step === "details" ? t("detailsStepHelp") : t("orderStepHelp");
         renderSelectedMeal();
       }
 
@@ -1558,12 +1714,40 @@
         return `<p class="note"><strong>${t("addons")}:</strong> ${addons.map((addon) => `${escapeHtml(addon.name)} x${addon.qty}`).join(", ")}</p>`;
       }
 
+      function renderPrepRequests() {
+        const openPrep = state.prepRequests
+          .filter((request) => request.status !== "done")
+          .sort((a, b) => a.time.localeCompare(b.time) || a.createdAt - b.createdAt);
+
+        refs.prepGrid.innerHTML = openPrep.map((request) => `
+          <article class="order-card ${request.status}">
+            <div class="order-top">
+              <h3>${escapeHtml(request.title)}</h3>
+              <span class="badge">${statusLabel(request.status)}</span>
+            </div>
+            <div class="order-meta">
+              <span class="badge">${t("time")} ${escapeHtml(request.time)}</span>
+              <span class="badge">${t("place")} ${escapeHtml(request.placeName || "")}</span>
+            </div>
+            <p class="note">${escapeHtml(request.note || t("noNotes"))}</p>
+            <div class="actions">
+              ${request.status === "ready" ? "" : `<button type="button" data-prep-status="${request.id}" data-next="ready">${t("markReady")}</button>`}
+            </div>
+          </article>
+        `).join("");
+
+        refs.emptyPrep.classList.toggle("hidden", openPrep.length > 0);
+        refs.prepCount.textContent = openPrep.length;
+      }
+
       function render() {
         renderCategoryOptions();
         renderTimeOptions();
+        renderPrepTimeOptions();
         renderMeals();
         renderPlaces();
         renderOrders();
+        renderPrepRequests();
       }
 
       function statusLabel(status) {
@@ -1645,6 +1829,51 @@
         return refs.wantedTime.value || currentTime();
       }
 
+      function getSelectedPrepTime() {
+        if (selectedPrepTimeMode === "nextMorning") return t("nextMorning");
+        if (selectedPrepTimeMode === "asap") return t("asap");
+        return refs.prepWantedTime.value || currentTime();
+      }
+
+      async function submitPrepRequest() {
+        const place = state.places.find((item) => item.id === refs.prepServicePlace.value);
+        if (!place) {
+          setMode("manage");
+          return;
+        }
+
+        const request = {
+          title: refs.prepTitle.value.trim(),
+          time: getSelectedPrepTime(),
+          placeId: place.id,
+          placeName: place.name,
+          note: refs.prepNote.value.trim()
+        };
+        if (!request.title) return;
+
+        if (usingServer) {
+          await api("/api/prep-requests", {
+            method: "POST",
+            body: JSON.stringify(request)
+          });
+        } else {
+          state.prepRequests.push({
+            id: crypto.randomUUID(),
+            ...request,
+            status: "new",
+            createdAt: Date.now()
+          });
+          saveState();
+          renderPrepRequests();
+        }
+
+        refs.prepTitle.value = "";
+        refs.prepNote.value = "";
+        selectedPrepTimeMode = "asap";
+        showOrderStep("category");
+        setMode("kitchen");
+      }
+
       function setDefaultTime() {
         if (!refs.wantedTime.value) refs.wantedTime.value = currentTime();
       }
@@ -1710,6 +1939,22 @@
         selectedTimeMode = button.dataset.timeMode;
         renderTimeOptions();
       });
+
+      refs.prepRequestMode.addEventListener("click", () => {
+        selectedCategory = "";
+        selectedMealId = "";
+        showOrderStep("prep");
+      });
+
+      refs.prepTimeChoiceGrid.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-prep-time-mode]");
+        if (!button) return;
+        selectedPrepTimeMode = button.dataset.prepTimeMode;
+        renderPrepTimeOptions();
+      });
+
+      refs.sendPrepRequest.addEventListener("click", () => submitPrepRequest());
+      refs.backFromPrep.addEventListener("click", () => showOrderStep("category"));
 
       refs.categoryGrid.addEventListener("click", (event) => {
         const button = event.target.closest("[data-category]");
@@ -1821,6 +2066,24 @@
           });
           saveState();
           renderOrders();
+        }
+      });
+
+      refs.prepGrid.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-prep-status]");
+        if (!button) return;
+        if (usingServer) {
+          await api(`/api/prep-requests/${encodeURIComponent(button.dataset.prepStatus)}/status`, {
+            method: "PATCH",
+            body: JSON.stringify({ status: button.dataset.next })
+          });
+        } else {
+          state.prepRequests = state.prepRequests.map((request) => {
+            if (request.id !== button.dataset.prepStatus) return request;
+            return { ...request, status: button.dataset.next };
+          });
+          saveState();
+          renderPrepRequests();
         }
       });
 

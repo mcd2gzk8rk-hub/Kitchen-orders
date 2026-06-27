@@ -67,6 +67,7 @@ function normalizeState(nextState) {
       return { category: "lunch", addons: [], ...meal, questions };
     }),
     orders: nextState.orders || [],
+    prepRequests: nextState.prepRequests || [],
     places: nextState.places && nextState.places.length ? nextState.places : demoPlaces
   };
 }
@@ -76,7 +77,7 @@ function loadState() {
     const saved = JSON.parse(fs.readFileSync(dataFile, "utf8"));
     if (Array.isArray(saved.meals) && Array.isArray(saved.orders)) return normalizeState(saved);
   } catch (error) {}
-  return normalizeState({ meals: demoMeals, orders: [], places: demoPlaces });
+  return normalizeState({ meals: demoMeals, orders: [], prepRequests: [], places: demoPlaces });
 }
 
 function saveState() {
@@ -266,6 +267,27 @@ async function routeApi(req, res, url) {
     return sendJson(res, 201, state);
   }
 
+  if (req.method === "POST" && url.pathname === "/api/prep-requests") {
+    const body = await readJson(req);
+    const place = state.places.find((item) => item.id === body.placeId) || { id: "", name: cleanText(body.placeName, 80) };
+    const request = {
+      id: crypto.randomUUID(),
+      title: cleanText(body.title, 160),
+      time: cleanText(body.time, 80),
+      note: cleanText(body.note, 300),
+      placeId: place.id,
+      placeName: place.name,
+      status: "new",
+      createdAt: Date.now()
+    };
+    if (!request.title) return sendJson(res, 400, { error: "Prep request is required" });
+    if (!request.placeName) return sendJson(res, 400, { error: "Place is required" });
+    state.prepRequests.push(request);
+    saveState();
+    broadcast();
+    return sendJson(res, 201, state);
+  }
+
   const orderStatus = url.pathname.match(/^\/api\/orders\/([^/]+)\/status$/);
   if (req.method === "PATCH" && orderStatus) {
     const body = await readJson(req);
@@ -273,6 +295,19 @@ async function routeApi(req, res, url) {
     if (!allowed.has(body.status)) return sendJson(res, 400, { error: "Invalid status" });
     state.orders = state.orders.map((order) => (
       order.id === decodeURIComponent(orderStatus[1]) ? { ...order, status: body.status } : order
+    ));
+    saveState();
+    broadcast();
+    return sendJson(res, 200, state);
+  }
+
+  const prepStatus = url.pathname.match(/^\/api\/prep-requests\/([^/]+)\/status$/);
+  if (req.method === "PATCH" && prepStatus) {
+    const body = await readJson(req);
+    const allowed = new Set(["ready", "done"]);
+    if (!allowed.has(body.status)) return sendJson(res, 400, { error: "Invalid status" });
+    state.prepRequests = state.prepRequests.map((request) => (
+      request.id === decodeURIComponent(prepStatus[1]) ? { ...request, status: body.status } : request
     ));
     saveState();
     broadcast();
