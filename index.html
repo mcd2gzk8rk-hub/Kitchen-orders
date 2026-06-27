@@ -685,6 +685,13 @@
                     وقت الأكل
                     <input id="wantedTime" type="time" required />
                   </label>
+                  <label id="specificDayLabel" class="hidden">
+                    اليوم
+                    <select id="wantedDay">
+                      <option value="today">اليوم</option>
+                      <option value="tomorrow">بكرة</option>
+                    </select>
+                  </label>
                   <label class="full">
                     المكان
                     <select id="servicePlace"></select>
@@ -714,6 +721,13 @@
                   <label id="prepSpecificTimeLabel" class="hidden">
                     وقت التجهيز
                     <input id="prepWantedTime" type="time" />
+                  </label>
+                  <label id="prepSpecificDayLabel" class="hidden">
+                    اليوم
+                    <select id="prepWantedDay">
+                      <option value="today">اليوم</option>
+                      <option value="tomorrow">بكرة</option>
+                    </select>
                   </label>
                   <label class="full">
                     المكان
@@ -928,6 +942,9 @@
           wantedTime: "وقت الأكل",
           asap: "في أسرع وقت",
           specificTime: "اختيار وقت محدد",
+          day: "اليوم",
+          today: "اليوم",
+          tomorrow: "بكرة",
           servicePlace: "المكان",
           orderNote: "ملاحظة للطلب",
           orderNotePlaceholder: "مثال: بدون فلفل، زيادة صوص",
@@ -1024,6 +1041,9 @@
           wantedTime: "Eating time",
           asap: "ASAP",
           specificTime: "Choose a specific time",
+          day: "Day",
+          today: "Today",
+          tomorrow: "Tomorrow",
           servicePlace: "Place",
           orderNote: "Order note",
           orderNotePlaceholder: "Example: no pepper, extra sauce",
@@ -1120,6 +1140,9 @@
           wantedTime: "Oras ng pagkain",
           asap: "ASAP",
           specificTime: "Pumili ng tiyak na oras",
+          day: "Araw",
+          today: "Ngayon",
+          tomorrow: "Bukas",
           servicePlace: "Lugar",
           orderNote: "Tala sa order",
           orderNotePlaceholder: "Halimbawa: walang sili, dagdag sauce",
@@ -1236,6 +1259,8 @@
         timeChoiceGrid: document.getElementById("timeChoiceGrid"),
         specificTimeLabel: document.getElementById("specificTimeLabel"),
         wantedTime: document.getElementById("wantedTime"),
+        specificDayLabel: document.getElementById("specificDayLabel"),
+        wantedDay: document.getElementById("wantedDay"),
         servicePlace: document.getElementById("servicePlace"),
         customQuestionWrap: document.getElementById("customQuestionWrap"),
         addonsWrap: document.getElementById("addonsWrap"),
@@ -1247,6 +1272,8 @@
         prepTimeChoiceGrid: document.getElementById("prepTimeChoiceGrid"),
         prepSpecificTimeLabel: document.getElementById("prepSpecificTimeLabel"),
         prepWantedTime: document.getElementById("prepWantedTime"),
+        prepSpecificDayLabel: document.getElementById("prepSpecificDayLabel"),
+        prepWantedDay: document.getElementById("prepWantedDay"),
         prepServicePlace: document.getElementById("prepServicePlace"),
         prepNote: document.getElementById("prepNote"),
         sendPrepRequest: document.getElementById("sendPrepRequest"),
@@ -1387,6 +1414,8 @@
         refs.searchMeal.placeholder = t("searchMeal");
         refs.timeChoiceLabel.textContent = t("wantedTime");
         setLabel("wantedTime", t("wantedTime"));
+        setLabel("wantedDay", t("day"));
+        updateDayOptions(refs.wantedDay);
         setLabel("servicePlace", t("servicePlace"));
         setLabel("orderNote", t("orderNote"));
         refs.orderNote.placeholder = t("orderNotePlaceholder");
@@ -1396,6 +1425,8 @@
         refs.prepTitle.placeholder = t("prepTitlePlaceholder");
         refs.prepTimeChoiceLabel.textContent = t("prepTime");
         setLabel("prepWantedTime", t("prepTime"));
+        setLabel("prepWantedDay", t("day"));
+        updateDayOptions(refs.prepWantedDay);
         setLabel("prepServicePlace", t("servicePlace"));
         setLabel("prepNote", t("prepNote"));
         refs.prepNote.placeholder = t("prepNotePlaceholder");
@@ -1485,6 +1516,7 @@
           </button>
         `).join("");
         refs.specificTimeLabel.classList.toggle("hidden", selectedTimeMode !== "specific");
+        refs.specificDayLabel.classList.toggle("hidden", selectedTimeMode !== "specific");
       }
 
       function renderPrepTimeOptions() {
@@ -1497,6 +1529,16 @@
           </button>
         `).join("");
         refs.prepSpecificTimeLabel.classList.toggle("hidden", selectedPrepTimeMode !== "specific");
+        refs.prepSpecificDayLabel.classList.toggle("hidden", selectedPrepTimeMode !== "specific");
+      }
+
+      function updateDayOptions(select) {
+        const current = select.value || "today";
+        select.innerHTML = `
+          <option value="today">${t("today")}</option>
+          <option value="tomorrow">${t("tomorrow")}</option>
+        `;
+        select.value = current;
       }
 
       function renderPlaces() {
@@ -1701,7 +1743,6 @@
                 <span class="badge">${statusText}</span>
               </div>
               <div class="order-meta">
-                <span class="badge">${t(order.category || "lunch")}</span>
                 <span class="badge">${t("place")} ${escapeHtml(order.placeName || "")}</span>
               </div>
               ${renderTimeDisplay(order)}
@@ -1881,21 +1922,30 @@
       function getSelectedEatingTime() {
         if (selectedTimeMode === "asap") return { label: t("asap"), targetAt: "" };
         const value = refs.wantedTime.value || currentTime();
-        return { label: value, targetAt: buildTargetDate(value) };
+        const targetAt = buildTargetDate(value, refs.wantedDay.value);
+        return { label: formatSpecificTimeLabel(value, targetAt), targetAt };
       }
 
       function getSelectedPrepTime() {
         if (selectedPrepTimeMode === "asap") return { label: t("asap"), targetAt: "" };
         const value = refs.prepWantedTime.value || currentTime();
-        return { label: value, targetAt: buildTargetDate(value) };
+        const targetAt = buildTargetDate(value, refs.prepWantedDay.value);
+        return { label: formatSpecificTimeLabel(value, targetAt), targetAt };
       }
 
-      function buildTargetDate(timeValue) {
+      function buildTargetDate(timeValue, dayValue) {
         const [hours, minutes] = timeValue.split(":").map(Number);
         const target = new Date();
         target.setHours(hours || 0, minutes || 0, 0, 0);
-        if (target.getTime() < Date.now()) target.setDate(target.getDate() + 1);
+        if (dayValue === "tomorrow" || target.getTime() < Date.now()) target.setDate(target.getDate() + 1);
         return target.toISOString();
+      }
+
+      function formatSpecificTimeLabel(timeValue, targetAt) {
+        const target = new Date(targetAt);
+        const now = new Date();
+        const sameDate = target.toDateString() === now.toDateString();
+        return `${timeValue} ${sameDate ? t("today") : t("tomorrow")}`;
       }
 
       async function submitPrepRequest() {
@@ -1941,6 +1991,17 @@
 
       function setDefaultTime() {
         if (!refs.wantedTime.value) refs.wantedTime.value = currentTime();
+        if (!refs.prepWantedTime.value) refs.prepWantedTime.value = currentTime();
+        syncDayDefault(refs.wantedTime, refs.wantedDay);
+        syncDayDefault(refs.prepWantedTime, refs.prepWantedDay);
+      }
+
+      function syncDayDefault(timeInput, daySelect) {
+        if (!timeInput.value) return;
+        const [hours, minutes] = timeInput.value.split(":").map(Number);
+        const target = new Date();
+        target.setHours(hours || 0, minutes || 0, 0, 0);
+        daySelect.value = target.getTime() < Date.now() ? "tomorrow" : "today";
       }
 
       function updateClock() {
@@ -2003,8 +2064,10 @@
         const button = event.target.closest("[data-time-mode]");
         if (!button) return;
         selectedTimeMode = button.dataset.timeMode;
+        syncDayDefault(refs.wantedTime, refs.wantedDay);
         renderTimeOptions();
       });
+      refs.wantedTime.addEventListener("change", () => syncDayDefault(refs.wantedTime, refs.wantedDay));
 
       refs.prepRequestMode.addEventListener("click", () => {
         selectedCategory = "";
@@ -2016,8 +2079,10 @@
         const button = event.target.closest("[data-prep-time-mode]");
         if (!button) return;
         selectedPrepTimeMode = button.dataset.prepTimeMode;
+        syncDayDefault(refs.prepWantedTime, refs.prepWantedDay);
         renderPrepTimeOptions();
       });
+      refs.prepWantedTime.addEventListener("change", () => syncDayDefault(refs.prepWantedTime, refs.prepWantedDay));
 
       refs.sendPrepRequest.addEventListener("click", () => submitPrepRequest());
       refs.backFromPrep.addEventListener("click", () => showOrderStep("category"));
